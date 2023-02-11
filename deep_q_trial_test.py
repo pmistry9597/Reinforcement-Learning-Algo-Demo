@@ -1,4 +1,6 @@
-from deep_q_trial import *
+from rl.deep_q.lunar_dqn import *
+from rl.deep_q.deep_q import select_q, act_from_q
+from deep_q_trial import DeepQLunarTrainer, batch_loss
 import unittest
 import math
 
@@ -54,7 +56,7 @@ class DeepQLunarTrainerTest(unittest.TestCase):
         optim = torch.optim.RMSprop(q_func.parameters())
         q_func_targ = DeepQLunar(in_size, act_size)
         q_func_targ.load_state_dict(q_func.state_dict())
-        trainer = DeepQLunarTrainer((q_func, optim), q_func_targ, batch_size=16, reward_decay=0.6, targ_update_steps=5, steps_for_update=1, buffer_len_to_start=1)
+        trainer = DeepQLunarTrainer((q_func, optim), q_func_targ, batch_size=16, reward_decay=0.6, targ_update_steps=5, steps_for_update=1, buffer_len_to_start=1, buffer_sample_len=math.inf)
 
         orig_pars = copy.deepcopy(list(q_func.parameters()))
         # form ([state_matrix, next_state_matrix, termin_matrix, action_matrix, reward_matrix])
@@ -74,7 +76,7 @@ class DeepQLunarTrainerTest(unittest.TestCase):
         q_func = DeepQLunar(in_size, act_size)
         optim = torch.optim.RMSprop(q_func.parameters())
         q_func_targ = DeepQLunar(in_size, act_size)
-        trainer = DeepQLunarTrainer((q_func, optim), q_func_targ, batch_size=16, reward_decay=0.6, targ_update_steps=targ_update_steps, steps_for_update=1, buffer_len_to_start=1)
+        trainer = DeepQLunarTrainer((q_func, optim), q_func_targ, batch_size=16, reward_decay=0.6, targ_update_steps=targ_update_steps, steps_for_update=1, buffer_len_to_start=1, buffer_sample_len=math.inf)
 
         orig_targ_pars = copy.deepcopy(list(q_func_targ.parameters()))
 
@@ -103,7 +105,7 @@ class DeepQLunarTrainerTest(unittest.TestCase):
         q_func = DeepQLunar(in_size, act_size)
         optim = torch.optim.RMSprop(q_func.parameters())
         q_func_targ = DeepQLunar(in_size, act_size)
-        trainer = DeepQLunarTrainer((q_func, optim), q_func_targ, batch_size=16, reward_decay=0.6, targ_update_steps=targ_update_steps, steps_for_update=1, buffer_len_to_start=1)
+        trainer = DeepQLunarTrainer((q_func, optim), q_func_targ, batch_size=16, reward_decay=0.6, targ_update_steps=targ_update_steps, steps_for_update=1, buffer_len_to_start=1, buffer_sample_len=math.inf)
         trainer.set_epsilon_policy(lambda count: ep)
 
         obs = torch.randn([b_size, in_size], dtype=torch.double)
@@ -128,7 +130,7 @@ class DeepQLunarTrainerTest(unittest.TestCase):
         q_func = DeepQLunar(in_size, act_size)
         optim = torch.optim.RMSprop(q_func.parameters())
         q_func_targ = DeepQLunar(in_size, act_size)
-        trainer = DeepQLunarTrainer((q_func, optim), q_func_targ, batch_size=16, reward_decay=0.6, targ_update_steps=targ_update_steps, steps_for_update=1, buffer_len_to_start=1)
+        trainer = DeepQLunarTrainer((q_func, optim), q_func_targ, batch_size=16, reward_decay=0.6, targ_update_steps=targ_update_steps, steps_for_update=1, buffer_len_to_start=1, buffer_sample_len=math.inf)
         trainer.set_epsilon_policy(lambda count: ep)
 
         obs = torch.randn([b_size, in_size], dtype=torch.double)
@@ -155,7 +157,7 @@ class DeepQLunarTrainerTest(unittest.TestCase):
         fake_net = DeepQLunar(in_size, act_size)
         optim = torch.optim.RMSprop(fake_net.parameters()) #use ineffective optimizer to prevent model from changin
         q_func_targ = DeepQLunar(in_size, act_size)
-        trainer = DeepQLunarTrainer((q_func, optim), q_func_targ, batch_size=16, reward_decay=0.6, targ_update_steps=targ_update_steps, steps_for_update=1, buffer_len_to_start=1)
+        trainer = DeepQLunarTrainer((q_func, optim), q_func_targ, batch_size=16, reward_decay=0.6, targ_update_steps=targ_update_steps, steps_for_update=1, buffer_len_to_start=1, buffer_sample_len=math.inf)
         trainer.set_epsilon_policy(ep_pol)
 
         obs = (torch.randn([b_size, in_size], dtype=torch.double),torch.randn([b_size, in_size], dtype=torch.double))

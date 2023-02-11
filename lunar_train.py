@@ -5,6 +5,7 @@ import math
 import statistics as stats
 from datetime import datetime
 from functools import partial
+from rl.helpers import normalize
 
 ############# Screwing around with training an agent in lunar lander environment, not meant to be a final product
 # the file of cursed long functions and some redundant code - I wanted to get something working!
@@ -39,14 +40,14 @@ def train_for_eps(episodes, trainer_actor, env, max_steps=math.inf, measure_eps=
         termin = False
         step = 0
         obs, info = env.reset()
-        obs = deep_q_trial.normalize(obs, obs_mean, obs_scale)
+        obs = normalize(obs, obs_mean, obs_scale)
 
         while not termin and max_steps > step:
             prev_obs = obs
             act_tensor = trainer.act(torch.tensor(np.expand_dims(obs, axis=0), dtype=torch.double), e)
             obs, reward, termin, trunc, info = env.step(act_tensor.item())
 
-            obs = deep_q_trial.normalize(obs, obs_mean, obs_scale)
+            obs = normalize(obs, obs_mean, obs_scale)
             sample = (torch.tensor(prev_obs, dtype=torch.double), torch.tensor(obs, dtype=torch.double), termin, act_tensor.squeeze(), torch.tensor(reward, dtype=torch.double))
             trainer.new_step(sample)
 
@@ -70,7 +71,9 @@ def measurement_r(end_scores, bellman_seq, steps, msg):
     bell_mean, bell_std = measure.get_stats_on_seq(bellman_seq)
     print("{}end score mean: {}, std: {};  bellman mean: {}, std: {}; steps mean: {}, std {}".format(msg, end_score_mean, std, bell_mean, bell_std, step_mean, step_std))
 
+from rl.deep_q import lunar_dqn
 import deep_q_trial
+from rl.deep_q import deep_q
 import torch
 
 def ep_policy(epis_no, eps_decay, eps_min):
@@ -83,7 +86,8 @@ def train_once(trial_no, start_time, hyperparam_list):
     (episodes, target_update_steps, 
         buffer_len_to_start, max_steps, 
         steps_for_update, reward_decay,
-        eps_min, lr, eps_decay
+        eps_min, lr, eps_decay,
+        buffer_sample_len
         ) = hyperparam_list
         
     env = gym.make('LunarLander-v2', render_mode="rgb_array") #moved here to delete environment every so often
@@ -99,14 +103,14 @@ def train_once(trial_no, start_time, hyperparam_list):
     with open(os.path.join(record_dir, "hyperparam.txt"), 'wb+') as hyperparam_f:
         pickle.dump(hyperparam_list, hyperparam_f)
 
-    q_func = deep_q_trial.DeepQLunar(obs_size, act_size)
+    q_func = lunar_dqn.DeepQLunar(obs_size, act_size)
     optim = torch.optim.Adam(q_func.parameters(), lr=lr) # no longer using rmsprop unlike dqn paper
-    q_targ = deep_q_trial.DeepQLunar(obs_size, act_size)
+    q_targ = lunar_dqn.DeepQLunar(obs_size, act_size)
     q_targ.load_state_dict(q_func.state_dict())
     
-    trainer = deep_q_trial.DeepQLunarTrainer((q_func, optim), q_targ, 64, reward_decay, target_update_steps, steps_for_update=steps_for_update, buffer_len_to_start=buffer_len_to_start)
+    trainer = deep_q_trial.DeepQLunarTrainer((q_func, optim), q_targ, 64, reward_decay, target_update_steps, steps_for_update=steps_for_update, buffer_len_to_start=buffer_len_to_start, buffer_sample_len=buffer_sample_len)
     trainer.set_epsilon_policy(partial(ep_policy, eps_decay=eps_decay, eps_min=eps_min))
-    actor = deep_q_trial.DeepQActor(q_func)
+    actor = deep_q.DeepQActor(q_func)
 
     obs_mean = (env.observation_space.high + env.observation_space.low) / 2
     obs_scale = 1.0 / (env.observation_space.high - obs_mean)
@@ -138,12 +142,14 @@ def encode_hypers(
     reward_decay = 0.99,
     eps_min = 0.01,
     lr=0.0005,
-    eps_decay = .995):
+    eps_decay = .995,
+    buffer_sample_len=100000):
 
     hyperparam_list = (episodes, target_update_steps, 
         buffer_len_to_start, max_steps, 
         steps_for_update, reward_decay,
-        eps_min, lr, eps_decay
+        eps_min, lr, eps_decay,
+        buffer_sample_len
         )
     return hyperparam_list
 

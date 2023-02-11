@@ -8,7 +8,7 @@ from functools import reduce
 import torch
 import numpy as np
 
-from deep_q_trial import normalize
+from rl.helpers import normalize
 
 def measure_ep(agent, env, obs_norm, max_steps=math.inf, record_frames=False):
     obs0, info0 = env.reset()
