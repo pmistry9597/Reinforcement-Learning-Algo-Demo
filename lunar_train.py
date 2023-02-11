@@ -9,6 +9,22 @@ from functools import partial
 ############# Screwing around with training an agent in lunar lander environment, not meant to be a final product
 # the file of cursed long functions and some redundant code - I wanted to get something working!
 
+def measure_at_train_episode(trainer_actor, env, obs_norm, max_steps, measurements, epis_no, measure_ep_reporter):
+    obs_mean, obs_scale = obs_norm
+    trainer, actor = trainer_actor
+
+    print("steps:", len(trainer.steps))
+    rew_seq = measure.measure_for_eps(13, actor, env, (obs_mean, obs_scale), max_steps=max_steps)
+    _, end_scores, bellman_seq, steps = measure.stats_score_seq(rew_seq, trainer.reward_decay)
+
+    measurements.append((epis_no, end_scores, bellman_seq, steps))
+    measure_ep_reporter(epis_no, end_scores, bellman_seq, steps)
+
+    # stopping when recorded average high nuff for me
+    end_mean = stats.mean(end_scores)
+
+    return end_mean
+
 # reporters are meant to accept any input if needed
 def train_for_eps(episodes, trainer_actor, env, max_steps=math.inf, measure_eps=set(), step_reporter=lambda step, epis, reward: None, measure_ep_reporter=lambda epis, seq, bellman_seq, steps: None):
     trainer, actor = trainer_actor
@@ -38,16 +54,8 @@ def train_for_eps(episodes, trainer_actor, env, max_steps=math.inf, measure_eps=
             step += 1
 
         if e in measure_eps:
-            print("steps:", len(trainer.steps))
-            rew_seq = measure.measure_for_eps(13, actor, env, (obs_mean, obs_scale), max_steps=max_steps)
-            _, end_scores, bellman_seq, steps = measure.stats_score_seq(rew_seq, trainer.reward_decay)
-
-            measurements.append((e, end_scores, bellman_seq, steps))
-            measure_ep_reporter(e, end_scores, bellman_seq, steps)
-
-            # stopping when recorded average high nuff for me
-            end_mean = stats.mean(end_scores)
-            # end_stdev = stats.stdev(end_scores)
+            # trainer_actor, env, (obs_mean, obs_scale), max_steps, measurements
+            end_mean = measure_at_train_episode(trainer_actor, env, (obs_mean, obs_scale), max_steps, measurements, e, measure_ep_reporter)
             if end_mean >= 95:
                 break
 
@@ -75,7 +83,7 @@ def train_once(trial_no, start_time, hyperparam_list):
     (episodes, target_update_steps, 
         buffer_len_to_start, max_steps, 
         steps_for_update, reward_decay,
-        eps_min, lr
+        eps_min, lr, eps_decay
         ) = hyperparam_list
         
     env = gym.make('LunarLander-v2', render_mode="rgb_array") #moved here to delete environment every so often
@@ -88,8 +96,6 @@ def train_once(trial_no, start_time, hyperparam_list):
     act_size = 4
 
     measure_eps = set(filter(lambda epis: epis % 20 == 20 - 1, range(episodes)))
-    eps_decay = .995
-
     with open(os.path.join(record_dir, "hyperparam.txt"), 'wb+') as hyperparam_f:
         pickle.dump(hyperparam_list, hyperparam_f)
 
@@ -115,8 +121,6 @@ def train_once(trial_no, start_time, hyperparam_list):
         measure_ep_reporter=ep_r, 
         )
 
-    # env = gym.make('LunarLander-v2', render_mode="rgb_array") #copied here to delete environment every so often
-
     final_measure_ep = 20
     score_seq = measure.measure_for_eps(final_measure_ep, actor, env, (obs_mean, obs_scale), record_dir=record_dir+"/final", prefix="final", record_eps=set(range(5)))
     _, end_scores, bellman_seq, steps = measure.stats_score_seq(score_seq, trainer.reward_decay)
@@ -133,12 +137,13 @@ def encode_hypers(
     steps_for_update = 1,
     reward_decay = 0.99,
     eps_min = 0.01,
-    lr=0.0005):
+    lr=0.0005,
+    eps_decay = .995):
 
     hyperparam_list = (episodes, target_update_steps, 
         buffer_len_to_start, max_steps, 
         steps_for_update, reward_decay,
-        eps_min, lr
+        eps_min, lr, eps_decay
         )
     return hyperparam_list
 
