@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from rl.deep_q.basic import select_q, act_from_q
-from .. import trainer
+from rl import trainer
 
 # batch input should be in form ([state_matrix, next_state_matrix, termin_matrix, action_matrix, reward_matrix])
 # where same index in each matrix is corresponding to same sample

@@ -191,10 +191,3 @@ class DeepQTrainerTest(unittest.TestCase):
                     i = a
             acts_raw.append([i])
         return acts_raw
-
-
-if __name__ == "__main__":
-    unittest.main()
-    
-    # fuck = DeepQTrainer()
-    # fuck.test_q_func_param_update__new_step()
