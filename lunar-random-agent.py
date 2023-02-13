@@ -1,5 +1,5 @@
 import measure
-import actor
+from rl import actor
 
 import matplotlib.pyplot as plt
 import statistics as stats
@@ -11,7 +11,7 @@ agent = actor.RandomActor(env.action_space)
 episodes = 100
 record_steps = set()
 
-scores = measure.measure_for_eps(episodes, agent, env, record_steps=record_steps)
+scores = measure.measure_for_eps(episodes, agent, env, record_eps=record_steps, obs_norm=(0, 1))
 
 mean_scores = list(map(lambda x: stats.mean(x), scores))
 overall_score_mean = stats.mean(mean_scores)

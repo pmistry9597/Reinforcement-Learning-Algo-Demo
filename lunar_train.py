@@ -72,8 +72,8 @@ def measurement_r(end_scores, bellman_seq, steps, msg):
     print("{}end score mean: {}, std: {};  bellman mean: {}, std: {}; steps mean: {}, std {}".format(msg, end_score_mean, std, bell_mean, bell_std, step_mean, step_std))
 
 from rl.deep_q import lunar_dqn
-import deep_q_trial
-from rl.deep_q import deep_q
+from rl.deep_q import basic as deep_q_base
+from rl.deep_q.trainer import DeepQTrainer
 import torch
 
 def ep_policy(epis_no, eps_decay, eps_min):
@@ -92,7 +92,7 @@ def train_once(trial_no, start_time, hyperparam_list):
         
     env = gym.make('LunarLander-v2', render_mode="rgb_array") #moved here to delete environment every so often
 
-    record_dir="recorded/trial_{}_{}".format(trial_no, start_time)
+    record_dir = "recorded/trial_{}_{}".format(trial_no, start_time)
     if not os.path.isdir(record_dir):
         os.makedirs(record_dir, exist_ok=True)
 
@@ -108,9 +108,9 @@ def train_once(trial_no, start_time, hyperparam_list):
     q_targ = lunar_dqn.DeepQLunar(obs_size, act_size)
     q_targ.load_state_dict(q_func.state_dict())
     
-    trainer = deep_q_trial.DeepQLunarTrainer((q_func, optim), q_targ, 64, reward_decay, target_update_steps, steps_for_update=steps_for_update, buffer_len_to_start=buffer_len_to_start, buffer_sample_len=buffer_sample_len)
+    trainer = DeepQTrainer((q_func, optim), q_targ, 64, reward_decay, target_update_steps, steps_for_update=steps_for_update, buffer_len_to_start=buffer_len_to_start, buffer_sample_len=buffer_sample_len)
     trainer.set_epsilon_policy(partial(ep_policy, eps_decay=eps_decay, eps_min=eps_min))
-    actor = deep_q.DeepQActor(q_func)
+    actor = deep_q_base.DeepQActor(q_func)
 
     obs_mean = (env.observation_space.high + env.observation_space.low) / 2
     obs_scale = 1.0 / (env.observation_space.high - obs_mean)

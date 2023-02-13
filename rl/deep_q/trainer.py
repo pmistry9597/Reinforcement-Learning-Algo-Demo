@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
-from rl.deep_q.deep_q import select_q, act_from_q
-import trainer
+from rl.deep_q.basic import select_q, act_from_q
+from .. import trainer
 
 # batch input should be in form ([state_matrix, next_state_matrix, termin_matrix, action_matrix, reward_matrix])
 # where same index in each matrix is corresponding to same sample
@@ -30,7 +30,7 @@ def batch_optim(batch, reward_decay, q_func_optim, q_func_targ, mseloss):
     return loss
 
 # things to consider: pushing out older states in the step sequence stored, concat states + actions for dataset
-class DeepQLunarTrainer(trainer.Trainer):
+class DeepQTrainer(trainer.Trainer):
     # acts with the expectation of producing a batch of actions
     def act(self, obs, trajec_no): # episilon greedy here
         epis_no = trajec_no

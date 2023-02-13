@@ -49,7 +49,7 @@ def user_action(_obs):
     return action
 
 # agent selection/setup
-import actor
+from rl import actor
 
 # agent = actor.RandomActor(env.action_space)
 agent = actor.ExternalActor(user_action) # user agent case
