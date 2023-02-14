@@ -21,12 +21,6 @@ I intend on demoing the following algorithms in simulations that are pre-built i
 - [ ] Proximal Policy Optimization (PPO)
 - [ ] Soft Actor Critic (SAC)
 
-The first two algorithms are much simpler than the last two. The last two are sort of the workhorses of today's RL as far as I can tell.
+The first two algorithms are much simpler than the last two, and were early and foundational algorithms in the field of modern RL. The last two are sort of the workhorses of today's RL as far as I can tell.
 
-## Description of Algorithms Done
-
-Deep Q-Networks involves a neural network predicting the value of a Q function. A Q function is an estimate of the long term reward, usually denoted as Q(s,a). The only inputs are the current state and an action value. It essentially predicts what happens if you were to take an action, a, in a state, s. An optimal Q function, Q*(s,a), predicts what will *actually* happen in an environment, assuming the best actions are always taken (this last part has to do with a *policy*).
-
-This algorithm works in a discrete action space only, which is perfect for the LunarLander environment. This means, however, it won't be applied to other environments. It is based on [Deepmind's 2015 paper](https://www.nature.com/articles/nature14236).
-
-If you look closely, this algorithm in the repo showed up out of nowhere. That is because this is the first algorithm and I didn't want to post anything without initial signs of success.
+Descriptions of algorithms currently completed can be found in their respective folders under the rl folder.
