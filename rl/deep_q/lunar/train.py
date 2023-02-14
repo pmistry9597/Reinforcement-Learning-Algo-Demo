@@ -1,80 +1,16 @@
 import gymnasium as gym
-import measure
-import numpy as np
-import math
-import statistics as stats
 from datetime import datetime
 from functools import partial
-from rl.helpers import normalize
+import torch
 
 ############# Screwing around with training an agent in lunar lander environment, not meant to be a final product
 # the file of cursed long functions and some redundant code - I wanted to get something working!
 
-def measure_at_train_episode(trainer_actor, env, obs_norm, max_steps, measurements, epis_no, measure_ep_reporter):
-    obs_mean, obs_scale = obs_norm
-    trainer, actor = trainer_actor
-
-    print("steps:", len(trainer.steps))
-    rew_seq = measure.measure_for_eps(13, actor, env, (obs_mean, obs_scale), max_steps=max_steps)
-    _, end_scores, bellman_seq, steps = measure.stats_score_seq(rew_seq, trainer.reward_decay)
-
-    measurements.append((epis_no, end_scores, bellman_seq, steps))
-    measure_ep_reporter(epis_no, end_scores, bellman_seq, steps)
-
-    # stopping when recorded average high nuff for me
-    end_mean = stats.mean(end_scores)
-
-    return end_mean
-
-# reporters are meant to accept any input if needed
-def train_for_eps(episodes, trainer_actor, env, max_steps=math.inf, measure_eps=set(), step_reporter=lambda step, epis, reward: None, measure_ep_reporter=lambda epis, seq, bellman_seq, steps: None):
-    trainer, actor = trainer_actor
-    measurements = []
-
-    # normalizing params for obs, action, reward
-    obs_mean = (env.observation_space.high + env.observation_space.low) / 2
-    obs_scale = 1.0 / (env.observation_space.high - obs_mean)
-
-    # measurements pls? rewards over time, cumulative reward per episode, steps required
-    for e in range(episodes):
-        termin = False
-        step = 0
-        obs, info = env.reset()
-        obs = normalize(obs, obs_mean, obs_scale)
-
-        while not termin and max_steps > step:
-            prev_obs = obs
-            act_tensor = trainer.act(torch.tensor(np.expand_dims(obs, axis=0), dtype=torch.double), e)
-            obs, reward, termin, trunc, info = env.step(act_tensor.item())
-
-            obs = normalize(obs, obs_mean, obs_scale)
-            sample = (torch.tensor(prev_obs, dtype=torch.double), torch.tensor(obs, dtype=torch.double), termin, act_tensor.squeeze(), torch.tensor(reward, dtype=torch.double))
-            trainer.new_step(sample)
-
-            step_reporter(step, e, reward)
-            step += 1
-
-        if e in measure_eps:
-            # trainer_actor, env, (obs_mean, obs_scale), max_steps, measurements
-            end_mean = measure_at_train_episode(trainer_actor, env, (obs_mean, obs_scale), max_steps, measurements, e, measure_ep_reporter)
-            if end_mean >= 95:
-                break
-
-    return measurements
-
-def ep_r(epis, end_scores, bellman_seq, steps):
-    measurement_r(end_scores, bellman_seq, steps, "measured episode {}, ".format(epis))
-
-def measurement_r(end_scores, bellman_seq, steps, msg):
-    end_score_mean, std = measure.get_stats_on_seq(end_scores)
-    step_mean, step_std = measure.get_stats_on_seq(steps)
-    bell_mean, bell_std = measure.get_stats_on_seq(bellman_seq)
-    print("{}end score mean: {}, std: {};  bellman mean: {}, std: {}; steps mean: {}, std {}".format(msg, end_score_mean, std, bell_mean, bell_std, step_mean, step_std))
-
-from rl.deep_q import lunar_dqn
+import rl.deep_q.lunar.model as lunar_dqn
 from rl.deep_q import basic as deep_q_base
 from rl.deep_q.trainer import DeepQTrainer
-import torch
+from rl.train_generic import train_for_eps, ep_r, measurement_r
+import measure
 
 def ep_policy(epis_no, eps_decay, eps_min):
     return max((eps_decay ** epis_no), eps_min)
@@ -134,7 +70,7 @@ def train_once(trial_no, start_time, hyperparam_list):
         pickle.dump(measure_seq, measure_seq_f)
 
 def encode_hypers(
-    episodes = 1200,
+    episodes = 45, #1200,
     target_update_steps = 20,
     buffer_len_to_start = 1000,
     max_steps = 600,

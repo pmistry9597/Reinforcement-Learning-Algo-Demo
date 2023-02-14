@@ -1,4 +1,4 @@
-from lunar_train import train_for_hypers, encode_hypers
+from rl.deep_q.lunar.train import train_for_hypers, encode_hypers
 import numpy as np
 import math
 from functools import partial

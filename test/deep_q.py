@@ -1,4 +1,4 @@
-from rl.deep_q.lunar_dqn import *
+from rl.deep_q.lunar.model import *
 from rl.deep_q.basic import select_q, act_from_q
 from rl.deep_q.trainer import DeepQTrainer, batch_loss
 import unittest
