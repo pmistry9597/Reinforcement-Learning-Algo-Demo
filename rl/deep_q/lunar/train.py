@@ -9,7 +9,7 @@ import torch
 import rl.deep_q.lunar.model as lunar_dqn
 from rl.deep_q import basic as deep_q_base
 from rl.deep_q.trainer import DeepQTrainer
-from rl.train_generic import train_for_eps, ep_r, measurement_r
+from rl.train_generic import complete_train, default_ep_r
 import measure
 
 def ep_policy(epis_no, eps_decay, eps_min):
@@ -28,16 +28,8 @@ def train_once(trial_no, start_time, hyperparam_list):
         
     env = gym.make('LunarLander-v2', render_mode="rgb_array") #moved here to delete environment every so often
 
-    record_dir = "recorded/trial_{}_{}".format(trial_no, start_time)
-    if not os.path.isdir(record_dir):
-        os.makedirs(record_dir, exist_ok=True)
-
     obs_size, = env.observation_space.shape
     act_size = 4
-
-    measure_eps = set(filter(lambda epis: epis % 20 == 20 - 1, range(episodes)))
-    with open(os.path.join(record_dir, "hyperparam.txt"), 'wb+') as hyperparam_f:
-        pickle.dump(hyperparam_list, hyperparam_f)
 
     q_func = lunar_dqn.DeepQLunar(obs_size, act_size)
     optim = torch.optim.Adam(q_func.parameters(), lr=lr) # no longer using rmsprop unlike dqn paper
@@ -50,24 +42,16 @@ def train_once(trial_no, start_time, hyperparam_list):
 
     obs_mean = (env.observation_space.high + env.observation_space.low) / 2
     obs_scale = 1.0 / (env.observation_space.high - obs_mean)
+    obs_norm = (obs_mean, obs_scale)
 
-    measure_ep_thing = 3
-    measure.measure_for_eps(measure_ep_thing, actor, env, (obs_mean, obs_scale), record_eps=set(range(measure_ep_thing)), record_dir=record_dir, prefix="initial")
-
-    measure_seq = train_for_eps(episodes=episodes, 
-        trainer_actor=(trainer, actor), 
-        env=env, max_steps=max_steps, 
-        measure_eps=measure_eps,
-        measure_ep_reporter=ep_r, 
-        )
-
-    final_measure_ep = 20
-    score_seq = measure.measure_for_eps(final_measure_ep, actor, env, (obs_mean, obs_scale), record_dir=record_dir+"/final", prefix="final", record_eps=set(range(5)))
-    _, end_scores, bellman_seq, steps = measure.stats_score_seq(score_seq, trainer.reward_decay)
-    measurement_r(end_scores, bellman_seq, steps, "final measurement w {} episodes, ".format(final_measure_ep))
-
-    with open(os.path.join(record_dir, "measure_seq.txt"), 'wb+') as measure_seq_f:
-        pickle.dump(measure_seq, measure_seq_f)
+    measure_eps = set(filter(lambda epis: epis % 20 == 20 - 1, range(episodes)))
+    
+    complete_train(
+        (trainer, actor), 
+        env, 
+        (episodes, max_steps, obs_norm), 
+        (default_ep_r, measure_eps), 
+        "dqn", str(datetime.now()))
 
 def encode_hypers(
     episodes = 45, #1200,
