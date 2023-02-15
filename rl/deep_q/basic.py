@@ -13,3 +13,7 @@ class DeepQActor(actor.Actor):
         self.q_func = q_func
     def __call__(self, obs):
         return act_from_q(self.q_func(obs))
+    def save_model(self, file_path):
+        torch.save(self.q_func, file_path)
+    def load_model(self, file_path):
+        self.q_func = torch.load(self.q_func)

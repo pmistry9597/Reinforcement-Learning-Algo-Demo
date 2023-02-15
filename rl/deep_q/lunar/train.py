@@ -45,12 +45,15 @@ def train_once(trial_no, start_time, hyperparam_list):
     obs_norm = (obs_mean, obs_scale)
 
     measure_eps = set(filter(lambda epis: epis % 20 == 20 - 1, range(episodes)))
+    save_eps = set(filter(lambda epis: epis % 40 == 40 - 1, range(episodes)))
+    should_save_cond = lambda e: e in save_eps
     
     complete_train(
         (trainer, actor), 
         env, 
         (episodes, max_steps, obs_norm), 
         (default_ep_r, measure_eps), 
+        should_save_cond,
         "dqn", str(datetime.now()))
 
 def encode_hypers(

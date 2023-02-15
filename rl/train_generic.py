@@ -10,15 +10,14 @@ import pickle
 from rl.helpers import normalize
 
 # train with saving, measurements, etc
-def complete_train(trainer_actor, env, basic_hypers, measure_ep_param, class_code, save_code):
+def complete_train(trainer_actor, env, basic_hypers, measure_ep_param, should_save_cond, class_code, save_code):
     trainer, actor = trainer_actor
     episodes, max_steps, obs_norm = basic_hypers
     ep_r, measure_eps = measure_ep_param # fn to call when measurement occurs, and set of which episodes to run it on
 
     default_save_root = "recorded"
     path = os.path.join(default_save_root, class_code, save_code)
-    if not os.path.isdir(path):
-        os.makedirs(path, exist_ok=True)
+    os.makedirs(path, exist_ok=True)
 
     with open(os.path.join(path, "trainer_state"), 'wb+') as trainer_f:
         pickle.dump(trainer, trainer_f)
@@ -29,6 +28,7 @@ def complete_train(trainer_actor, env, basic_hypers, measure_ep_param, class_cod
     measure_seq = train_for_eps(episodes=episodes, 
         trainer_actor=trainer_actor, 
         env=env, max_steps=max_steps, 
+        path=path, should_save_cond=should_save_cond,
         measure_eps=measure_eps,
         measure_ep_reporter=ep_r, 
         obs_norm=obs_norm,
@@ -41,18 +41,20 @@ def complete_train(trainer_actor, env, basic_hypers, measure_ep_param, class_cod
 
     with open(os.path.join(path, "measure_seq"), 'wb+') as measure_seq_f:
         pickle.dump(measure_seq, measure_seq_f)
-    with open(os.path.join(path, "final_seqs"), 'wb+') as final_seqs_f:
-        pickle.dump((end_scores, bellman_seq, steps), final_seqs_f)
+    with open(os.path.join(path, "final_seq"), 'wb+') as final_seq_f:
+        pickle.dump((end_scores, bellman_seq, steps), final_seq_f)
 
 # reporters are meant to accept any input if needed
-def train_for_eps(episodes, trainer_actor, env, obs_norm=(0.0,1.0), max_steps=math.inf, cut_off_mean=math.inf, measure_eps=set(), step_reporter=lambda step, epis, reward: None, measure_ep_reporter=lambda epis, seq, bellman_seq, steps: None):
+def train_for_eps(episodes, trainer_actor, env, path, should_save_cond, obs_norm=(0.0,1.0), max_steps=math.inf, cut_off_mean=math.inf, measure_eps=set(), step_reporter=lambda step, epis, reward: None, measure_ep_reporter=lambda epis, seq, bellman_seq, steps: None):
     trainer, actor = trainer_actor
     measurements = []
+    default_model_dir = "model"
+    path = os.path.join(path, default_model_dir) #work from here
 
     # normalizing params for obs, action, reward
     obs_mean, obs_scale = obs_norm
-    # obs_mean = (env.observation_space.high + env.observation_space.low) / 2
-    # obs_scale = 1.0 / (env.observation_space.high - obs_mean)
+
+    last_max = -math.inf # max score of a model
 
     # measurements pls? rewards over time, cumulative reward per episode, steps required
     for e in range(episodes):
@@ -76,10 +78,22 @@ def train_for_eps(episodes, trainer_actor, env, obs_norm=(0.0,1.0), max_steps=ma
         if e in measure_eps:
             # trainer_actor, env, (obs_mean, obs_scale), max_steps, measurements
             end_mean = measure_at_train_episode(trainer_actor, env, (obs_mean, obs_scale), max_steps, measurements, e, measure_ep_reporter)
+            if should_save_cond(e):
+                save_model_score(path, str(e), actor, end_mean)
+            if end_mean > last_max:
+                last_max = end_mean
+                save_model_score(path, "max_ep_{}".format(e), actor, end_mean)
             if end_mean >= cut_off_mean:
                 break
-
+    
+    save_model_score(path, "final", actor, end_mean)
     return measurements
+
+def save_model_score(path, name, actor, score):
+    os.makedirs(path, exist_ok=True)
+    with open(os.path.join(path, '{}_score'.format(name, score)), 'wb+') as score_f:
+        pickle.dump(score, score_f)
+    actor.save_model(os.path.join(path, name))
 
 def measure_at_train_episode(trainer_actor, env, obs_norm, max_steps, measurements, epis_no, measure_ep_reporter):
     obs_mean, obs_scale = obs_norm

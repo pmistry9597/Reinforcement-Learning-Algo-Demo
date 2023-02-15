@@ -2,6 +2,12 @@ class Actor:
     def __call__(self, obs):
         pass
 
+    def save_model(self, file_path):
+        pass
+
+    def load_model(self, file_path):
+        pass
+
 class ExternalActor(Actor):
     def __init__(self, retrieve_act):
         self.retriever = retrieve_act

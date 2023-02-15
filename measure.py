@@ -46,7 +46,7 @@ def measure_for_eps(episodes, agent, env, obs_norm, max_steps=math.inf, record_e
         rewards, frames, termin = measure_ep(agent, env, obs_norm, max_steps=max_steps, record_frames=record_frames)
         if record_frames:
             imageio.mimwrite(os.path.join(record_dir, "{}_ep_{}_{}.gif").format(prefix, e, datetime.now()), frames, fps=30) #save gif of images
-        score_seqs.append(rewards)
+        score_seqs.append(rewards) # keeping all of this in memory may be why the cloud server crashes
 
     return score_seqs
 
