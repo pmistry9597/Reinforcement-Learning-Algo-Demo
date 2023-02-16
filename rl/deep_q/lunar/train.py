@@ -50,8 +50,7 @@ def train_once(trial_no, start_time, hyperparam_list):
     
     complete_train(
         (trainer, actor), 
-        env, 
-        (episodes, max_steps, obs_norm), 
+        env, (episodes, max_steps, obs_norm), 
         (default_ep_r, measure_eps), 
         should_save_cond,
         "dqn", str(datetime.now()))

@@ -16,4 +16,4 @@ class DeepQActor(actor.Actor):
     def save_model(self, file_path):
         torch.save(self.q_func, file_path)
     def load_model(self, file_path):
-        self.q_func = torch.load(self.q_func)
+        self.q_func = torch.load(file_path)
