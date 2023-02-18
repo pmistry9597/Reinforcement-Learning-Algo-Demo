@@ -9,7 +9,7 @@ def act_from_q(q): # take largest q value as action, behaves as if q is batched
     return torch.argmax(q, dim=1)
 
 class DeepQActor(actor.Actor):
-    def __init__(self, q_func):
+    def __init__(self, q_func=None):
         self.q_func = q_func
     def __call__(self, obs):
         return act_from_q(self.q_func(obs))

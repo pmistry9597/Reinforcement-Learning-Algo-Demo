@@ -9,7 +9,7 @@ def sample_act(act_probs): # batched version
     return torch.stack(samples)
 
 class PolicyGradActor(actor.Actor):
-    def __init__(self, policy):
+    def __init__(self, policy=None):
         self.policy = policy
     def __call__(self, obs):
         return sample_act(self.policy(obs))

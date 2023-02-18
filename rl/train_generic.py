@@ -56,7 +56,6 @@ def train_for_eps(episodes, trainer_actor, env, path, should_save_cond, obs_norm
 
     last_max = -math.inf # max score of a model
 
-    # measurements pls? rewards over time, cumulative reward per episode, steps required
     for e in range(episodes):
         termin = False
         step = 0
@@ -74,6 +73,7 @@ def train_for_eps(episodes, trainer_actor, env, path, should_save_cond, obs_norm
 
             step_reporter(step, e, reward)
             step += 1
+        trainer.termin_trajectory()
 
         if e in measure_eps:
             # trainer_actor, env, (obs_mean, obs_scale), max_steps, measurements
