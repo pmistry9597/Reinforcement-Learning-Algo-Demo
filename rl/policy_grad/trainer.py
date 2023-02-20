@@ -24,7 +24,7 @@ class PolicyGradTrainer(trainer.Trainer):
         self.reward_decay = reward_decay
         self.trajecs_til_update = trajecs_til_update
 
-# calculate loss for policy gradient
+# calculate loss for policy gradient method
 # take in trajectories to compute over, advantage/reward fn of trajectory, policy probability outputs recorded, actions actually taken
 def trajec_loss(trajecs_rewards, reward_decay, advantage_fn, policy_outs, acts_taken):
     advantages_tup = tuple(map(partial(trajec_advantage, reward_decay=reward_decay, advantage_fn=advantage_fn), trajecs_rewards))
@@ -40,4 +40,5 @@ def trajec_loss(trajecs_rewards, reward_decay, advantage_fn, policy_outs, acts_t
     # note: may need to update as may accept tensor instead of list of trajectory features
 
 def trajec_advantage(trajec_rewards, reward_decay, advantage_fn):
+    trajec_rewards = torch.stack(trajec_rewards)
     return tuple(map(lambda i: advantage_fn(trajec_rewards[i:], reward_decay), range(len(trajec_rewards))))

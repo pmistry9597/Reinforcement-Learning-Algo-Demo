@@ -3,9 +3,10 @@ import unittest
 import torch
 from torch.nn.functional import softmax
 
-class PolicyGradTrainerTest(unittest.TestCase):
+class PolicyGradTrainerFnsTest(unittest.TestCase):
     def test_trajec_loss(self):
-        trajec_rewards = torch.tensor([(1,-5,-69), (3,4,-5)])
+        trajec_rewards = ([(1,-5,-69), (3,4,-5)])
+        trajec_rewards = tuple(map(lambda seq: tuple(map(torch.tensor, seq)), trajec_rewards))
         reward_decay = 0.9
         advantage_fn = lambda rew_traj, decay: torch.sum( decay ** torch.arange(len(rew_traj)) * rew_traj )
 
@@ -22,7 +23,7 @@ class PolicyGradTrainerTest(unittest.TestCase):
         for full_traj, act_traj, pol_traj in zip(trajec_rewards, acts_taken, policy_outs):
             # self.assertGreater(0, len(full_traj))
             for i in range(len(full_traj)):
-                traj = full_traj[-(i+1):]
+                traj = torch.stack(full_traj[-(i+1):])
                 adv = torch.sum( traj * decay_fct[:i+1] )
                 act = act_traj[-(i+1)]
                 log_pol = torch.log(pol_traj[-(i+1),act])
