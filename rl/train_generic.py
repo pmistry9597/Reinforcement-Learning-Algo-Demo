@@ -55,7 +55,8 @@ def train_for_eps(episodes, trainer_actor, env, path, should_save_cond, obs_norm
     obs_mean, obs_scale = obs_norm
 
     last_max = -math.inf # max score of a model
-
+    
+    trainer.punctuate_trajectory()
     for e in range(episodes):
         termin = False
         step = 0
@@ -73,7 +74,7 @@ def train_for_eps(episodes, trainer_actor, env, path, should_save_cond, obs_norm
 
             step_reporter(step, e, reward)
             step += 1
-        trainer.termin_trajectory()
+        trainer.punctuate_trajectory()
 
         if e in measure_eps:
             # trainer_actor, env, (obs_mean, obs_scale), max_steps, measurements
