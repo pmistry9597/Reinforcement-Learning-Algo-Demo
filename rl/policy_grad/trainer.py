@@ -5,12 +5,11 @@ import torch
 
 class PolicyGradTrainer(trainer.Trainer):
     def act(self, obs, trajec_no):
-        # note: might have to unsqueeze or squeeze to get dims right for neural net and other shit
-        # pol_out = self.actor(obs)
         policy, _ = self.policy_optim
         pol_out = policy(obs)
         self.policy_outs[-1].append(pol_out)
-        return sample_act(pol_out.squeeze())
+        # print(pol_out)
+        return sample_act(pol_out)
 
     def new_step(self, sampl):
         self.trajecs[-1].append(sampl)

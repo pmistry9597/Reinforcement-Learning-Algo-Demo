@@ -58,3 +58,31 @@ class PolicyGradTrainerTest(unittest.TestCase):
         curr_params = list(policy.parameters())
         for p, c in zip(prev_params, curr_params):
             self.assertFalse(torch.all(torch.isclose(p.detach(), c.detach(), atol=0.000001)))
+
+    def test_nn_update_after_sampling(self):
+        policy = PolicyGradNNLunar(2, 3)
+        optim = torch.optim.SGD(policy.parameters(), lr=0.01)
+        reward_decay = 0.8
+        trajecs_til_update = 2
+        trainer = pol_train.PolicyGradTrainer((policy, optim), reward_decay, trajecs_til_update)
+
+        tens = partial(torch.tensor, dtype=torch.double)
+        tensi = partial(torch.tensor, dtype=torch.long)
+        init, final = tens([0.4,-0.1]), tens([-0.4,-0.1])
+        # trainer.policy_outs = [[tens([0.1,0.4,0.5]),tens([0.01,0.01,0.98])]]
+        # obses = map(lambda traj: map(lambda smpl: smpl[0], traj), trainer.trajecs) # take current states for policy probability compute
+        # pol_outs = tuple(map(lambda obs_traj: tuple(map(lambda obs: policy(obs.unsqueeze(0)), obs_traj)), obses))
+        # trainer.policy_outs = pol_outs
+        
+        prev_params = deepcopy(list(policy.parameters()))
+
+        trainer.punctuate_trajectory()
+        for t in range(trajecs_til_update):
+            act = trainer.act(init.unsqueeze(0), t)
+            smpl = (init, final, True, act, torch.tensor(0.8))
+            trainer.new_step(smpl)
+            trainer.punctuate_trajectory()
+
+        curr_params = list(policy.parameters())
+        for p, c in zip(prev_params, curr_params):
+            self.assertFalse(torch.all(torch.isclose(p.detach(), c.detach(), atol=0.000001)))

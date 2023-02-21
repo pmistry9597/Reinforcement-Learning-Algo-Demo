@@ -1,4 +1,5 @@
 import torch.distributions as distrbs
+import torch
 from .. import actor
 
 def sample_act_single(act_prob):
