@@ -1,12 +1,13 @@
 import torch.distributions as distrbs
 import torch
+import torch.nn.functional as nn_func
 from .. import actor
 
-def sample_act_single(act_prob):
-    return distrbs.Categorical(act_prob).sample()
+def sample_act_single(act_logits):
+    return distrbs.Categorical(nn_func.softmax(act_logits, dim=0)).sample()
 
-def sample_act(act_probs): # batched version
-    samples = tuple(map(sample_act_single, act_probs))
+def sample_act(act_logits): # batched version
+    samples = tuple(map(sample_act_single, act_logits))
     return torch.stack(samples)
 
 class PolicyGradActor(actor.Actor):
