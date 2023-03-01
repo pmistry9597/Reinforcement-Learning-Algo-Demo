@@ -59,6 +59,9 @@ class PolicyGradTrainer(trainer.Trainer):
 # take in trajectories to compute over, advantage/reward fn of trajectory, policy probability outputs recorded, actions actually taken
 def trajecs_loss(trajecs_rewards, reward_decay, advantage_fn, logits_outs, acts_taken):
     advantages_tup = tuple(map(partial(trajec_advantage, reward_decay=reward_decay, advantage_fn=advantage_fn), trajecs_rewards))
+    # print(len(advantages_tup[1]), len(advantages_tup[1]))
+    for adv in advantages_tup:
+        print("fuck", len(adv))
     advantages = torch.tensor(advantages_tup)
     
     logits_outs = torch.stack(logits_outs)

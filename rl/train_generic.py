@@ -6,6 +6,7 @@ import statistics as stats
 import measure
 import os
 import pickle
+from datetime import datetime
 
 from rl.helpers import normalize
 
@@ -119,3 +120,11 @@ def measurement_r(end_scores, bellman_seq, steps, msg):
     step_mean, step_std = measure.get_stats_on_seq(steps)
     bell_mean, bell_std = measure.get_stats_on_seq(bellman_seq)
     print("{}end score mean: {}, std: {};  bellman mean: {}, std: {}; steps mean: {}, std {}".format(msg, end_score_mean, std, bell_mean, bell_std, step_mean, step_std))
+
+def train_for_hypers(hypers, train_once):
+    for t_no, h in enumerate(hypers):
+        curr_time = datetime.now()
+        train_once(t_no, curr_time, h)
+
+# note: something is seizing during interrupted training on the cloud server, when rewards are deemed adequate
+# it is during the final recording process that it happens

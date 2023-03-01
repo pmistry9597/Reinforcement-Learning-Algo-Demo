@@ -74,11 +74,3 @@ def encode_hypers(
         buffer_sample_len
         )
     return hyperparam_list
-
-def train_for_hypers(hypers):
-    for t_no, h in enumerate(hypers):
-        curr_time = datetime.now()
-        train_once(t_no, curr_time, h)
-
-# note: something is seizing during interrupted training on the cloud server, when rewards are deemed adequate
-# it is during the final recording process that it happens
