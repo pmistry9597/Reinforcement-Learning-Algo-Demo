@@ -101,7 +101,7 @@ def measure_at_train_episode(trainer_actor, env, obs_norm, max_steps, measuremen
     obs_mean, obs_scale = obs_norm
     trainer, actor = trainer_actor
 
-    print("steps:", len(trainer.steps))
+    print("steps:", trainer.get_total_steps())
     rew_seq = measure.measure_for_eps(13, actor, env, (obs_mean, obs_scale), max_steps=max_steps)
     _, end_scores, bellman_seq, steps = measure.stats_score_seq(rew_seq, trainer.reward_decay)
 

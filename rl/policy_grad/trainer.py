@@ -18,10 +18,15 @@ class PolicyGradTrainer(trainer.Trainer):
     def punctuate_trajectory(self):
         # trigger training update here when right
         if len(self.trajecs) % self.TRAJECS_TIL_UPDATE == self.TRAJECS_TIL_UPDATE - 1:
+            curr_chunk_steps = sum(map(len, self.trajecs))
+            self.total_steps += curr_chunk_steps
             self.update_policy()
             self.logits_outs = []
             self.trajecs = []
         self.new_buffers()
+
+    def get_total_steps(self):
+        return self.total_steps
 
     # --- specific to class section ---
 
@@ -33,6 +38,7 @@ class PolicyGradTrainer(trainer.Trainer):
 
         self.trajecs = []
         self.logits_outs = []
+        self.total_steps = 0
 
     def new_buffers(self):
         self.logits_outs.append([])

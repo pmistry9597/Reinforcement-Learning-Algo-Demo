@@ -46,6 +46,9 @@ class DeepQTrainer(trainer.Trainer):
             self.training_update()
         self.new_steps += 1
 
+    def get_total_steps(self):
+        return len(self.steps)
+
     # ------ more specific to this class methods ----
 
     def __init__(self, q_func_optim, q_func_targ, batch_size, reward_decay, targ_update_steps, steps_for_update, buffer_len_to_start, buffer_sample_len):

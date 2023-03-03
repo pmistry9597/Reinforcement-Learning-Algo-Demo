@@ -6,5 +6,8 @@ class Trainer:
     def new_step(self, sampl):
         pass
 
+    def get_total_steps(self):
+        pass
+
     def punctuate_trajectory(self):
         pass
