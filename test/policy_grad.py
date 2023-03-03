@@ -8,27 +8,29 @@ from copy import deepcopy
 
 class PolicyGradTrainerFnsTest(unittest.TestCase):
     def test_trajecs_loss(self):
-        trajec_rewards = ([(1,-5,-69), (3,4)])
+        trajec_rewards = ([(1,-5,-69, 45, 343,), (3,4)])
         trajec_rewards = tuple(map(lambda seq: tuple(map(torch.tensor, seq)), trajec_rewards))
         reward_decay = 0.9
         advantage_fn = lambda rew_traj, decay: torch.sum( decay ** torch.arange(len(rew_traj)) * rew_traj )
 
-        logits_outs = [tuple(map(lambda ten: torch.tensor(ten, dtype=torch.double), ((3,5),(1,2),(10,4)))), tuple(map(lambda ten: torch.tensor(ten, dtype=torch.double), ((4,3),(6,4),)))]
+        logits_outs = [tuple(map(lambda ten: torch.tensor(ten, dtype=torch.double), ((3,5),(1,2),(10,4),(1,2),(10,4)))), tuple(map(lambda ten: torch.tensor(ten, dtype=torch.double), ((4,3),(6,4),)))]
         logits_outs = tuple(map(torch.stack, logits_outs))
         # print(logits_outs[0].shape)
 
-        acts_taken = ([torch.tensor((0,1,0,)), torch.tensor((1,1))])
+        acts_taken = ([torch.tensor((0,1,0,0,1)), torch.tensor((1,1))])
         # print("hollow")
         actual_loss_val = pol_train.trajecs_loss(trajec_rewards, reward_decay, advantage_fn, logits_outs, acts_taken)
         # print("pee")
 
-        decay_fct = reward_decay ** torch.arange(3)
+        decay_fct = reward_decay ** torch.arange(5)
         expected_loss_seq = []
         # self.assertGreater(0, len(trajec_rewards))
         for full_traj, act_traj, pol_traj in zip(trajec_rewards, acts_taken, logits_outs):
             # self.assertGreater(0, len(full_traj))
             for i in range(len(full_traj)):
                 traj = torch.stack(full_traj[-(i+1):])
+                # print(traj, decay_fct[:i+1])
+                # print(act_traj[-(i+1)])
                 adv = torch.sum( traj * decay_fct[:i+1] )
                 act = act_traj[-(i+1)]
                 # print(pol_traj[-(i+1)].shape)

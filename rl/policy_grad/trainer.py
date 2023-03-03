@@ -1,5 +1,5 @@
 from .. import trainer
-from functools import partial
+from functools import partial, reduce
 from rl.policy_grad.basic import sample_act
 import torch
 import torch.nn.functional as nn_func
@@ -58,24 +58,31 @@ class PolicyGradTrainer(trainer.Trainer):
 # calculate loss for policy gradient method
 # take in trajectories to compute over, advantage/reward fn of trajectory, policy probability outputs recorded, actions actually taken
 def trajecs_loss(trajecs_rewards, reward_decay, advantage_fn, logits_outs, acts_taken):
-    advantages_tup = tuple(map(partial(trajec_advantage, reward_decay=reward_decay, advantage_fn=advantage_fn), trajecs_rewards))
-    # print(len(advantages_tup[1]), len(advantages_tup[1]))
-    for adv in advantages_tup:
-        print("fuck", len(adv))
-    advantages = torch.tensor(advantages_tup)
-    
-    logits_outs = torch.stack(logits_outs)
-    acts_taken = torch.stack(acts_taken)
-    # print("shap", policy_outs.shape, acts_taken.shape)
-    # print(logits_outs.shape)
-    log_act_prob = nn_func.log_softmax(logits_outs.squeeze(2), dim=2)
-    log_act_sel = log_act_prob.gather(2, acts_taken.unsqueeze(2)) # 2 is dim to select individual probabilities
+    advantages_map = map(partial(trajec_advantage, reward_decay=reward_decay, advantage_fn=advantage_fn), trajecs_rewards)
+    advantages_tens = tuple(map(torch.tensor, advantages_map))
 
-    # policy loss formula <- sum of(log of acts .* advantages)
-    # print(log_act_prob.shape)
-    return torch.mean(log_act_sel.squeeze() * advantages)
+    log_act_probs = map(get_log_act_prob, logits_outs)
+    log_act_sels = map(get_log_act_sel, zip(log_act_probs, acts_taken))
+    # log_act_sel = log_act_prob.gather(2, acts_taken.unsqueeze(2)) # 2 is dim to select individual probabilities
+
+    losses = tuple(map(mul_both, zip(advantages_tens, log_act_sels)))
+    total = sum(map(len, losses))
+    accum_losses = tuple(map(torch.sum, losses))
+    total_loss = reduce(lambda x, y: x + y, accum_losses, torch.tensor(0.0, dtype=torch.double))
+    return total_loss / total
 
     # note: may need to update as may accept tensor instead of list of trajectory features
+
+def mul_both(log_act):
+    adv, acts = log_act
+    return adv * acts.squeeze()
+
+def get_log_act_sel(log_act_w_acts_taken):
+    log_act_prob, acts_taken_sing = log_act_w_acts_taken
+    return log_act_prob.gather(1, acts_taken_sing.unsqueeze(1))
+
+def get_log_act_prob(logits_out):
+    return nn_func.log_softmax(logits_out.squeeze(1), dim=1)
 
 def trajec_advantage(trajec_rewards, reward_decay, advantage_fn):
     trajec_rewards = torch.stack(trajec_rewards)
