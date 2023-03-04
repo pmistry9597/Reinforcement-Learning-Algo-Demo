@@ -56,7 +56,7 @@ def train_once(trial_no, start_time, hyperparam_list):
         "dqn", str(datetime.now()))
 
 def encode_hypers(
-    episodes = 45, #1200,
+    episodes = 1200,
     target_update_steps = 20,
     buffer_len_to_start = 1000,
     max_steps = 600,

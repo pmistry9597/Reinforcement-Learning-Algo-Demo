@@ -7,7 +7,9 @@ def sample_act_single(act_logits):
     return distrbs.Categorical(nn_func.softmax(act_logits, dim=0)).sample()
 
 def sample_act(act_logits): # batched version
+    # print(act_logits)
     samples = tuple(map(sample_act_single, act_logits))
+    # print(samples)
     return torch.stack(samples)
 
 class PolicyGradActor(actor.Actor):

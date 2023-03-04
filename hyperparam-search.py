@@ -20,7 +20,7 @@ def get_q_hyperlist():
 
 def get_policy_grad_hyperlist():
     hypers = [
-        policy_train.encode_hypers(episodes=1000, max_steps=600, lr=0.001, reward_decay=0.99, trajecs_til_update=4)
+        policy_train.encode_hypers(episodes=5000, max_steps=600, lr=0.001, reward_decay=0.99, trajecs_til_update=2)
     ]
 
     return hypers
@@ -33,3 +33,4 @@ def handle_hyper_in(hypers, train_once):
 
 if __name__ == '__main__':
     handle_hyper_in(get_policy_grad_hyperlist(), policy_train.train_once)
+    # handle_hyper_in(get_q_hyperlist(), q_train.train_once)

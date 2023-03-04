@@ -9,6 +9,9 @@ The rewards are used to compute a view of how well the agent did. This can simpl
 
 The two quantities are used to compute the policy gradient. In many cases, however, the loss function form is used and then the gradient is computed using the typical automatic differentiation scheme that comes with most deep-learning libraries.
 
+## Lunar Lander Results
+I was a bit thrown off by my initial policy gradient trials (without baseline), as they showed no sign of convergence within several hundred episodes as with Deep-Q Networks. However, it turns out it is well known that policy gradient methods are far less sample efficient. This means that policy gradients only live up to their reputation as fast convergers only if many samples can be generated from an environment quickly. At the moment it takes around 3800 episodes just to get an average long term score of above 0.
+
 ## Beyond Policy Gradients
 
 The policy gradient computation here will be applied to Proximal Policy Optimization (PPO) later on, where the baseline is replaced with an advantage estimation. Many algorithms in RL today make use of this advantage estimation scheme, where a different model computes something that directly or indirectly allows an advantage to be computed. The advantage scheme is usually similar to how DQN computes the value of an action, and in this case these algorithms are known as actor-critic methods.

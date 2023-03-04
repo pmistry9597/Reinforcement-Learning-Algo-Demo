@@ -13,11 +13,12 @@ class PolicyGradTrainer(trainer.Trainer):
         return sample_act(logits_out)
 
     def new_step(self, sampl):
+        # print(sampl)
         self.trajecs[-1].append(sampl)
 
     def punctuate_trajectory(self):
         # trigger training update here when right
-        if len(self.trajecs) % self.TRAJECS_TIL_UPDATE == self.TRAJECS_TIL_UPDATE - 1:
+        if len(self.trajecs) >= self.TRAJECS_TIL_UPDATE:
             curr_chunk_steps = sum(map(len, self.trajecs))
             self.total_steps += curr_chunk_steps
             self.update_policy()
@@ -46,11 +47,13 @@ class PolicyGradTrainer(trainer.Trainer):
 
     def update_policy(self):
         smpl_rew_i = 4
-        trajecs_rewards = map(lambda trajec: tuple(map(lambda smpl: smpl[smpl_rew_i], trajec)), self.trajecs)
+        trajecs_rewards = tuple(map(lambda trajec: tuple(map(lambda smpl: smpl[smpl_rew_i], trajec)), self.trajecs))
         smpl_act_i = 3
         acts_taken = tuple(map(lambda trajec: torch.tensor(tuple(map(lambda smpl: smpl[smpl_act_i], trajec))), self.trajecs))
         logits_outs = tuple(map(torch.stack, self.logits_outs))
-        loss = trajecs_loss(trajecs_rewards, self.reward_decay, decayed_advantage, logits_outs, acts_taken)
+        # print(trajecs_rewards[0], logits_outs[0], acts_taken[0])
+        loss = -trajecs_loss(trajecs_rewards, self.reward_decay, decayed_advantage, logits_outs, acts_taken)
+        # print(loss)
 
         _, optim = self.policy_optim
         optim.zero_grad()
@@ -68,8 +71,7 @@ def trajecs_loss(trajecs_rewards, reward_decay, advantage_fn, logits_outs, acts_
     advantages_tens = tuple(map(torch.tensor, advantages_map))
 
     log_act_probs = map(get_log_act_prob, logits_outs)
-    log_act_sels = map(get_log_act_sel, zip(log_act_probs, acts_taken))
-    # log_act_sel = log_act_prob.gather(2, acts_taken.unsqueeze(2)) # 2 is dim to select individual probabilities
+    log_act_sels = tuple(map(get_log_act_sel, zip(log_act_probs, acts_taken)))
 
     losses = tuple(map(mul_both, zip(advantages_tens, log_act_sels)))
     total = sum(map(len, losses))
@@ -81,7 +83,8 @@ def trajecs_loss(trajecs_rewards, reward_decay, advantage_fn, logits_outs, acts_
 
 def mul_both(log_act):
     adv, acts = log_act
-    return adv * acts.squeeze()
+    prod = adv * acts.squeeze()
+    return prod
 
 def get_log_act_sel(log_act_w_acts_taken):
     log_act_prob, acts_taken_sing = log_act_w_acts_taken

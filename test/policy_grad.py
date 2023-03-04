@@ -29,13 +29,9 @@ class PolicyGradTrainerFnsTest(unittest.TestCase):
             # self.assertGreater(0, len(full_traj))
             for i in range(len(full_traj)):
                 traj = torch.stack(full_traj[-(i+1):])
-                # print(traj, decay_fct[:i+1])
-                # print(act_traj[-(i+1)])
                 adv = torch.sum( traj * decay_fct[:i+1] )
                 act = act_traj[-(i+1)]
-                # print(pol_traj[-(i+1)].shape)
                 log_pol = log_softmax(pol_traj[-(i+1)], dim=0)[act]
-                # print(log_pol.shape)
                 loss_single = log_pol * adv
                 expected_loss_seq.append(loss_single)
         # print(expected_loss_seq)
