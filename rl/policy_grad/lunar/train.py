@@ -10,7 +10,7 @@ from rl.train_generic import complete_train, default_ep_r
 def train_once(t_no, curr_time, hyperparams):
     (episodes, max_steps, 
         lr, reward_decay, 
-        trajecs_til_update,) = hyperparams
+        trajecs_til_update, cut_off_mean) = hyperparams
 
     env = gym.make('LunarLander-v2', render_mode="rgb_array")
     obs_size, = env.observation_space.shape
@@ -36,12 +36,12 @@ def train_once(t_no, curr_time, hyperparams):
         env, (episodes, max_steps, obs_norm, rew_norm),
         (default_ep_r, measure_eps), 
         should_save_cond, 
-        "policy_grad", str(datetime.now()))
+        "policy_grad", str(datetime.now()), cut_off_mean)
 
 def encode_hypers(episodes, max_steps, 
     lr, reward_decay, 
-    trajecs_til_update,):
+    trajecs_til_update, cut_off_mean=None):
 
     return (episodes, max_steps, 
         lr, reward_decay, 
-        trajecs_til_update,)
+        trajecs_til_update, cut_off_mean)
