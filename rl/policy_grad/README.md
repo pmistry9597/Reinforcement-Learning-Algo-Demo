@@ -11,6 +11,7 @@ The two quantities are used to compute the policy gradient. In many cases, howev
 
 ## Lunar Lander Results
 I was a bit thrown off by my initial policy gradient trials (without baseline), as they showed no sign of convergence within several hundred episodes as with Deep-Q Networks. However, it turns out it is well known that policy gradient methods are far less sample efficient. This means that policy gradients only live up to their reputation as fast convergers only if many samples can be generated from an environment quickly. At the moment it takes around 3800 episodes just to get an average long term score of above 0.
+The learn rate also had to be increased compared with DQN.
 
 ## Beyond Policy Gradients
 
