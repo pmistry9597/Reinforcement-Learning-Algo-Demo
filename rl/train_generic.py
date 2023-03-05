@@ -14,9 +14,9 @@ from rl.helpers import normalize
 def complete_train(trainer_actor, env, basic_hypers, measure_ep_param, should_save_cond, class_code, save_code, cut_off_mean):
     trainer, actor = trainer_actor
     episodes, max_steps, obs_norm, rew_norm = basic_hypers
-    if rew_norm is None:
-        rew_norm = (0.0, 1.0)
     ep_r, measure_eps = measure_ep_param # fn to call when measurement occurs, and set of which episodes to run it on
+    if cut_off_mean is None:
+        cut_off_mean = math.inf
 
     default_save_root = "recorded"
     path = os.path.join(default_save_root, class_code, save_code)
