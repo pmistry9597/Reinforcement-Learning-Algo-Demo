@@ -13,7 +13,7 @@ from rl.helpers import normalize
 # train with saving, measurements, etc
 def complete_train(trainer_actor, env, basic_hypers, measure_ep_param, should_save_cond, class_code, save_code):
     trainer, actor = trainer_actor
-    episodes, max_steps, obs_norm = basic_hypers
+    episodes, max_steps, obs_norm, rew_norm = basic_hypers
     ep_r, measure_eps = measure_ep_param # fn to call when measurement occurs, and set of which episodes to run it on
 
     default_save_root = "recorded"
@@ -33,6 +33,7 @@ def complete_train(trainer_actor, env, basic_hypers, measure_ep_param, should_sa
         measure_eps=measure_eps,
         measure_ep_reporter=ep_r, 
         obs_norm=obs_norm,
+        rew_norm=rew_norm
         )
 
     final_measure_ep = 20
@@ -46,7 +47,7 @@ def complete_train(trainer_actor, env, basic_hypers, measure_ep_param, should_sa
         pickle.dump((end_scores, bellman_seq, steps), final_seq_f)
 
 # reporters are meant to accept any input if needed
-def train_for_eps(episodes, trainer_actor, env, path, should_save_cond, obs_norm=(0.0,1.0), max_steps=math.inf, cut_off_mean=math.inf, measure_eps=set(), step_reporter=lambda step, epis, reward: None, measure_ep_reporter=lambda epis, seq, bellman_seq, steps: None):
+def train_for_eps(episodes, trainer_actor, env, path, should_save_cond, obs_norm=(0.0,1.0), rew_norm=(0.0,1.0), max_steps=math.inf, cut_off_mean=math.inf, measure_eps=set(), step_reporter=lambda step, epis, reward: None, measure_ep_reporter=lambda epis, seq, bellman_seq, steps: None):
     trainer, actor = trainer_actor
     measurements = []
     default_model_dir = "model"
@@ -54,6 +55,7 @@ def train_for_eps(episodes, trainer_actor, env, path, should_save_cond, obs_norm
 
     # normalizing params for obs, action, reward
     obs_mean, obs_scale = obs_norm
+    rew_mean, rew_scale = rew_norm
 
     last_max = -math.inf # max score of a model
     
@@ -70,6 +72,7 @@ def train_for_eps(episodes, trainer_actor, env, path, should_save_cond, obs_norm
             obs, reward, termin, trunc, info = env.step(act_tensor.item())
 
             obs = normalize(obs, obs_mean, obs_scale)
+            reward = normalize(reward, rew_mean, rew_scale)
             sample = (torch.tensor(prev_obs, dtype=torch.double), torch.tensor(obs, dtype=torch.double), termin, act_tensor.squeeze(), torch.tensor(reward, dtype=torch.double))
             trainer.new_step(sample)
 
