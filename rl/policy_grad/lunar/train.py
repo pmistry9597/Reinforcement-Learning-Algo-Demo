@@ -43,7 +43,7 @@ def train_once(t_no, curr_time, hyperparams):
 
 def encode_hypers(episodes, max_steps, 
     lr, reward_decay, 
-    trajecs_til_update, cut_off_mean=None, entropy_bonus=0.0,):
+    trajecs_til_update, cut_off_mean=None, entropy_bonus=0.0, discard_non_termined=False):
 
     return (episodes, max_steps, 
         lr, reward_decay, 
