@@ -27,7 +27,7 @@ def train_once(t_no, curr_time, hyperparams):
     obs_norm = (obs_mean, obs_scale)
     rew_norm = (0.0, 1.0/100.0)
 
-    trainer = PolicyGradTrainer((policy, optim), reward_decay, trajecs_til_update, entropy_coef=1.0, discard_non_termined=discard_non_termined)
+    trainer = PolicyGradTrainer((policy, optim), reward_decay, trajecs_til_update, entropy_coef=entropy_bonus, discard_non_termined=discard_non_termined)
     actor = basic.PolicyGradActor(policy)
 
     measure_eps = set(filter(lambda epis: epis % 20 == 20 - 1, range(episodes)))
