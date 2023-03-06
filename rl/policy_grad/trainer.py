@@ -31,11 +31,12 @@ class PolicyGradTrainer(trainer.Trainer):
 
     # --- specific to class section ---
 
-    def __init__(self, policy_optim, reward_decay, trajecs_til_update):
+    def __init__(self, policy_optim, reward_decay, trajecs_til_update, entropy_coef):
         # self.actor = actor
         self.policy_optim = policy_optim
         self.reward_decay = reward_decay
         self.TRAJECS_TIL_UPDATE = trajecs_til_update
+        self.ENTROPY_COEF = entropy_coef
 
         self.trajecs = []
         self.logits_outs = []
@@ -52,7 +53,9 @@ class PolicyGradTrainer(trainer.Trainer):
         acts_taken = tuple(map(lambda trajec: torch.tensor(tuple(map(lambda smpl: smpl[smpl_act_i], trajec))), self.trajecs))
         logits_outs = tuple(map(torch.stack, self.logits_outs))
         # print(trajecs_rewards[0], logits_outs[0], acts_taken[0])
-        loss = -trajecs_loss(trajecs_rewards, self.reward_decay, decayed_advantage, logits_outs, acts_taken)
+        entropy_total = sum(tuple(map(entropy, logits_outs)))
+        print(entropy_total)
+        loss = -trajecs_loss(trajecs_rewards, self.reward_decay, decayed_advantage, logits_outs, acts_taken) + -self.ENTROPY_COEF * entropy_total
         # print(loss)
 
         _, optim = self.policy_optim
@@ -63,6 +66,9 @@ class PolicyGradTrainer(trainer.Trainer):
         return loss
 
     # note: test this garbage class
+
+def entropy(logits):
+    return -torch.sum(nn_func.softmax(logits, dim=2) * nn_func.log_softmax(logits, dim=2))
 
 # calculate loss for policy gradient method
 # take in trajectories to compute over, advantage/reward fn of trajectory, policy probability outputs recorded, actions actually taken
