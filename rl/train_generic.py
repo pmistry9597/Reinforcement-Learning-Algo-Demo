@@ -11,7 +11,7 @@ from datetime import datetime
 from rl.helpers import normalize
 
 # train with saving, measurements, etc
-def complete_train(trainer_actor, env, basic_hypers, measure_ep_param, should_save_cond, class_code, save_code, cut_off_mean):
+def complete_train(trainer_actor, env, basic_hypers, measure_ep_param, should_save_cond, class_code, save_code, cut_off_mean=math.inf):
     trainer, actor = trainer_actor
     episodes, max_steps, obs_norm, rew_norm = basic_hypers
     ep_r, measure_eps = measure_ep_param # fn to call when measurement occurs, and set of which episodes to run it on
