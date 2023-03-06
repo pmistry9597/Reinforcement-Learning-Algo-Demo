@@ -54,7 +54,7 @@ class PolicyGradTrainer(trainer.Trainer):
         logits_outs = tuple(map(torch.stack, self.logits_outs))
         # print(trajecs_rewards[0], logits_outs[0], acts_taken[0])
         entropy_total = sum(tuple(map(entropy, logits_outs)))
-        print(entropy_total)
+        # print(entropy_total)
         loss = -trajecs_loss(trajecs_rewards, self.reward_decay, decayed_advantage, logits_outs, acts_taken) + -self.ENTROPY_COEF * entropy_total
         # print(loss)
 
