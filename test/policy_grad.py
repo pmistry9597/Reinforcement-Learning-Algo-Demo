@@ -48,7 +48,7 @@ class PolicyGradTrainerTest(unittest.TestCase):
         optim = torch.optim.SGD(policy.parameters(), lr=0.01)
         reward_decay = 0.8
         trajecs_til_update = 4
-        trainer = pol_train.PolicyGradTrainer((policy, optim), reward_decay, trajecs_til_update, entropy_coef=1.0)
+        trainer = pol_train.PolicyGradTrainer((policy, optim), reward_decay, trajecs_til_update, entropy_coef=1.0, discard_non_termined=False)
 
         tens = partial(torch.tensor, dtype=torch.double)
         tensi = partial(torch.tensor, dtype=torch.long)
@@ -70,7 +70,7 @@ class PolicyGradTrainerTest(unittest.TestCase):
         optim = torch.optim.SGD(policy.parameters(), lr=0.01)
         reward_decay = 0.8
         trajecs_til_update = 2
-        trainer = pol_train.PolicyGradTrainer((policy, optim), reward_decay, trajecs_til_update, entropy_coef=1.0)
+        trainer = pol_train.PolicyGradTrainer((policy, optim), reward_decay, trajecs_til_update, entropy_coef=1.0, discard_non_termined=False)
 
         tens = partial(torch.tensor, dtype=torch.double)
         tensi = partial(torch.tensor, dtype=torch.long)

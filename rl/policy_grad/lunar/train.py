@@ -9,8 +9,11 @@ from rl.train_generic import complete_train, default_ep_r
 
 def train_once(t_no, curr_time, hyperparams):
     (episodes, max_steps, 
-        lr, reward_decay, 
-        trajecs_til_update, cut_off_mean) = hyperparams
+        lr, reward_decay,
+        trajecs_til_update, 
+        cut_off_mean, 
+        entropy_bonus,
+        discard_non_termined,) = hyperparams
 
     env = gym.make('LunarLander-v2', render_mode="rgb_array")
     obs_size, = env.observation_space.shape
@@ -24,7 +27,7 @@ def train_once(t_no, curr_time, hyperparams):
     obs_norm = (obs_mean, obs_scale)
     rew_norm = (0.0, 1.0/100.0)
 
-    trainer = PolicyGradTrainer((policy, optim), reward_decay, trajecs_til_update, entropy_coef=1.0)
+    trainer = PolicyGradTrainer((policy, optim), reward_decay, trajecs_til_update, entropy_coef=1.0, discard_non_termined=discard_non_termined)
     actor = basic.PolicyGradActor(policy)
 
     measure_eps = set(filter(lambda epis: epis % 20 == 20 - 1, range(episodes)))
@@ -40,8 +43,11 @@ def train_once(t_no, curr_time, hyperparams):
 
 def encode_hypers(episodes, max_steps, 
     lr, reward_decay, 
-    trajecs_til_update, cut_off_mean=None):
+    trajecs_til_update, cut_off_mean=None, entropy_bonus=0.0,):
 
     return (episodes, max_steps, 
         lr, reward_decay, 
-        trajecs_til_update, cut_off_mean)
+        trajecs_til_update, 
+        cut_off_mean,
+        entropy_bonus,
+        discard_non_termined,)

@@ -24,6 +24,11 @@ class PolicyGradTrainer(trainer.Trainer):
             self.update_policy()
             self.logits_outs = []
             self.trajecs = []
+        if self.DISCARD_NON_TERMIN:
+            _,_,trajec_termin,_,_ = self.trajecs[-1]
+            if not trajec_termin:
+                del self.trajecs[-1]
+                del self.logits[-1]
         self.new_buffers()
 
     def get_total_steps(self):
@@ -31,12 +36,13 @@ class PolicyGradTrainer(trainer.Trainer):
 
     # --- specific to class section ---
 
-    def __init__(self, policy_optim, reward_decay, trajecs_til_update, entropy_coef):
+    def __init__(self, policy_optim, reward_decay, trajecs_til_update, entropy_coef, discard_non_termined):
         # self.actor = actor
         self.policy_optim = policy_optim
         self.reward_decay = reward_decay
         self.TRAJECS_TIL_UPDATE = trajecs_til_update
         self.ENTROPY_COEF = entropy_coef
+        self.DISCARD_NON_TERMIN = discard_non_termined
 
         self.trajecs = []
         self.logits_outs = []
