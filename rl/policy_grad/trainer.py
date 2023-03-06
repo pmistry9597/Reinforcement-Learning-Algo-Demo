@@ -24,7 +24,7 @@ class PolicyGradTrainer(trainer.Trainer):
             self.update_policy()
             self.logits_outs = []
             self.trajecs = []
-        if self.DISCARD_NON_TERMIN:
+        if self.DISCARD_NON_TERMIN and len(self.trajecs) > 0:
             _,_,trajec_termin,_,_ = self.trajecs[-1]
             if not trajec_termin:
                 del self.trajecs[-1]
