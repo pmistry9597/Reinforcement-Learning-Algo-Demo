@@ -21,7 +21,7 @@ class PolicyGradTrainer(trainer.Trainer):
             _,_,trajec_termin,_,_ = self.trajecs[-1][-1]
             if not trajec_termin:
                 del self.trajecs[-1]
-                del self.logits[-1]
+                del self.logits_outs[-1]
         # trigger training update here when right
         if len(self.trajecs) >= self.TRAJECS_TIL_UPDATE:
             curr_chunk_steps = sum(map(len, self.trajecs))
