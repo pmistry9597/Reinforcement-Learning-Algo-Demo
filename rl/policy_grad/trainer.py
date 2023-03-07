@@ -59,7 +59,7 @@ class PolicyGradTrainer(trainer.Trainer):
         acts_taken = tuple(map(lambda trajec: torch.tensor(tuple(map(lambda smpl: smpl[smpl_act_i], trajec))), self.trajecs))
         logits_outs = tuple(map(torch.stack, self.logits_outs))
         # print(trajecs_rewards[0], logits_outs[0], acts_taken[0])
-        entropy_total = sum(tuple(map(entropy, logits_outs)))
+        entropy_total = torch.mean(torch.cat(tuple(map(entropy, logits_outs)), dim=0))
         # print(entropy_total)
         loss = -trajecs_loss(trajecs_rewards, self.reward_decay, decayed_advantage, logits_outs, acts_taken) + -self.ENTROPY_COEF * entropy_total
         # print(loss)
@@ -74,7 +74,8 @@ class PolicyGradTrainer(trainer.Trainer):
     # note: test this garbage class
 
 def entropy(logits):
-    return -torch.sum(nn_func.softmax(logits, dim=2) * nn_func.log_softmax(logits, dim=2))
+    logits = logits.squeeze()
+    return -torch.sum(nn_func.softmax(logits, dim=1) * nn_func.log_softmax(logits, dim=1), dim=1)
 
 # calculate loss for policy gradient method
 # take in trajectories to compute over, advantage/reward fn of trajectory, policy probability outputs recorded, actions actually taken
@@ -110,4 +111,5 @@ def trajec_advantage(trajec_rewards, reward_decay, advantage_fn):
     return tuple(map(lambda i: advantage_fn(trajec_rewards[i:], reward_decay), range(len(trajec_rewards))))
 
 def decayed_advantage(rew_traj, decay):
+    rew_traj += rew_traj + torch.ones_like(rew_traj) * -0.001
     return torch.sum( decay ** torch.arange(len(rew_traj)) * rew_traj )
