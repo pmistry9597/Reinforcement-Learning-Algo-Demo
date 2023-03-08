@@ -1,5 +1,6 @@
 import rl.deep_q.lunar.train as q_train
 import rl.policy_grad.lunar.train as policy_train
+from rl.policy_grad.trainer import ExpoBaseLineAdvantage
 from rl.train_generic import train_for_hypers
 
 import numpy as np
@@ -20,7 +21,7 @@ def get_q_hyperlist():
 
 def get_policy_grad_hyperlist():
     hypers = [
-        policy_train.encode_hypers(episodes=15000, max_steps=1600, lr=0.003, reward_decay=0.9, entropy_bonus=0.0, trajecs_til_update=16, discard_non_termined=True)
+        policy_train.encode_hypers(episodes=15000, max_steps=1600, lr=0.003, reward_decay=0.9, entropy_bonus=0.0, trajecs_til_update=16, discard_non_termined=False, advantage_fn=ExpoBaseLineAdvantage(0.1))
     ]
 
     return hypers

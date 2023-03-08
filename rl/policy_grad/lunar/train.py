@@ -4,7 +4,7 @@ import torch
 
 from rl.policy_grad.lunar.model import PolicyGradNNLunar
 from rl.policy_grad import basic
-from rl.policy_grad.trainer import PolicyGradTrainer
+from rl.policy_grad.trainer import PolicyGradTrainer, trajecs_loss_minus
 from rl.train_generic import complete_train, default_ep_r
 
 def train_once(t_no, curr_time, hyperparams):
@@ -13,7 +13,8 @@ def train_once(t_no, curr_time, hyperparams):
         trajecs_til_update, 
         cut_off_mean, 
         entropy_bonus,
-        discard_non_termined,) = hyperparams
+        discard_non_termined,
+        advantage_fn,) = hyperparams
 
     env = gym.make('LunarLander-v2', render_mode="rgb_array")
     obs_size, = env.observation_space.shape
@@ -27,7 +28,7 @@ def train_once(t_no, curr_time, hyperparams):
     obs_norm = (obs_mean, obs_scale)
     rew_norm = (0.0, 1.0/100.0)
 
-    trainer = PolicyGradTrainer((policy, optim), reward_decay, trajecs_til_update, entropy_coef=entropy_bonus, discard_non_termined=discard_non_termined)
+    trainer = PolicyGradTrainer((policy, optim), reward_decay, trajecs_til_update, entropy_coef=entropy_bonus, discard_non_termined=discard_non_termined, advantage_fn=advantage_fn)
     actor = basic.PolicyGradActor(policy)
 
     measure_eps = set(filter(lambda epis: epis % 20 == 20 - 1, range(episodes)))
@@ -43,11 +44,12 @@ def train_once(t_no, curr_time, hyperparams):
 
 def encode_hypers(episodes, max_steps, 
     lr, reward_decay, 
-    trajecs_til_update, cut_off_mean=None, entropy_bonus=0.0, discard_non_termined=False):
+    trajecs_til_update, cut_off_mean=None, entropy_bonus=0.0, discard_non_termined=False, advantage_fn=trajecs_loss_minus):
 
     return (episodes, max_steps, 
         lr, reward_decay, 
         trajecs_til_update, 
         cut_off_mean,
         entropy_bonus,
-        discard_non_termined,)
+        discard_non_termined,
+        advantage_fn,)

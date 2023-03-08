@@ -36,9 +36,10 @@ class PolicyGradTrainer(trainer.Trainer):
 
     # --- specific to class section ---
 
-    def __init__(self, policy_optim, reward_decay, trajecs_til_update, entropy_coef, discard_non_termined):
+    def __init__(self, policy_optim, reward_decay, trajecs_til_update, entropy_coef, discard_non_termined, advantage_fn=trajecs_loss_minus):
         # self.actor = actor
         self.policy_optim = policy_optim
+        self.advantage_fn = advantage_fn
         self.reward_decay = reward_decay
         self.TRAJECS_TIL_UPDATE = trajecs_til_update
         self.ENTROPY_COEF = entropy_coef
@@ -61,7 +62,7 @@ class PolicyGradTrainer(trainer.Trainer):
         # print(trajecs_rewards[0], logits_outs[0], acts_taken[0])
         entropy_total = torch.mean(torch.cat(tuple(map(entropy, logits_outs)), dim=0))
         # print(entropy_total)
-        loss = -trajecs_loss(trajecs_rewards, self.reward_decay, decayed_advantage, logits_outs, acts_taken) + -self.ENTROPY_COEF * entropy_total
+        loss = self.advantage_fn(trajecs_rewards, self.reward_decay, decayed_advantage, logits_outs, acts_taken) + -self.ENTROPY_COEF * entropy_total
         # print(loss)
 
         _, optim = self.policy_optim
@@ -73,9 +74,21 @@ class PolicyGradTrainer(trainer.Trainer):
 
     # note: test this garbage class
 
+class ExpoBaseLineAdvantage:
+    def __init__(self, update_coef):
+        self.COEF = update_coef
+        self.avg = torch.tensor(0.0, dtype=torch.double)
+    def __call__(self, new_loss):
+        adv = new_loss - self.avg
+        self.avg = (1.0 - self.COEF) * self.avg + self.COEF * new_loss
+        return adv
+
 def entropy(logits):
     logits = logits.squeeze()
     return -torch.sum(nn_func.softmax(logits, dim=1) * nn_func.log_softmax(logits, dim=1), dim=1)
+
+def trajecs_loss_minus(trajecs_rewards, reward_decay, advantage_fn, logits_outs, acts_taken):
+    return -trajecs_loss(trajecs_rewards, reward_decay, advantage_fn, logits_outs, acts_taken)
 
 # calculate loss for policy gradient method
 # take in trajectories to compute over, advantage/reward fn of trajectory, policy probability outputs recorded, actions actually taken
@@ -111,5 +124,5 @@ def trajec_advantage(trajec_rewards, reward_decay, advantage_fn):
     return tuple(map(lambda i: advantage_fn(trajec_rewards[i:], reward_decay), range(len(trajec_rewards))))
 
 def decayed_advantage(rew_traj, decay):
-    rew_traj += rew_traj + torch.ones_like(rew_traj) * -0.001
+    # rew_traj += rew_traj + torch.ones_like(rew_traj) * -0.001
     return torch.sum( decay ** torch.arange(len(rew_traj)) * rew_traj )
