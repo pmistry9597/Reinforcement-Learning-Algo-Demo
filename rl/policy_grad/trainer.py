@@ -4,8 +4,22 @@ from rl.policy_grad.basic import sample_act
 import torch
 import torch.nn.functional as nn_func
 
-def trajecs_loss_minus(trajecs_rewards, reward_decay, advantage_fn, logits_outs, acts_taken):
-    return -trajecs_loss(trajecs_rewards, reward_decay, advantage_fn, logits_outs, acts_taken)
+# calculate loss for policy gradient method
+# take in trajectories to compute over, advantage/reward fn of trajectory, policy probability outputs recorded, actions actually taken
+def trajecs_loss(trajecs_rewards, reward_decay, advantage_fn, logits_outs, acts_taken):
+    advantages_map = map(partial(trajec_advantage, reward_decay=reward_decay, advantage_fn=advantage_fn), trajecs_rewards)
+    advantages_tens = tuple(map(torch.tensor, advantages_map))
+
+    log_act_probs = map(get_log_act_prob, logits_outs)
+    log_act_sels = tuple(map(get_log_act_sel, zip(log_act_probs, acts_taken)))
+
+    losses = tuple(map(mul_both, zip(advantages_tens, log_act_sels)))
+    total = sum(map(len, losses))
+    accum_losses = tuple(map(torch.sum, losses))
+    total_loss = reduce(lambda x, y: x + y, accum_losses, torch.tensor(0.0, dtype=torch.double))
+    return total_loss / total
+
+    # note: may need to update as may accept tensor instead of list of trajectory features
 
 class PolicyGradTrainer(trainer.Trainer):
     def act(self, obs, trajec_no):
@@ -39,7 +53,7 @@ class PolicyGradTrainer(trainer.Trainer):
 
     # --- specific to class section ---
 
-    def __init__(self, policy_optim, reward_decay, trajecs_til_update, entropy_coef, discard_non_termined, advantage_fn=trajecs_loss_minus):
+    def __init__(self, policy_optim, reward_decay, trajecs_til_update, entropy_coef, discard_non_termined, advantage_fn=trajecs_loss):
         # self.actor = actor
         self.policy_optim = policy_optim
         self.advantage_fn = advantage_fn
@@ -65,7 +79,7 @@ class PolicyGradTrainer(trainer.Trainer):
         # print(trajecs_rewards[0], logits_outs[0], acts_taken[0])
         entropy_total = torch.mean(torch.cat(tuple(map(lambda t: t.view([-1]), map(entropy, logits_outs))), dim=0))
         # print(entropy_total)
-        loss = self.advantage_fn(trajecs_rewards, self.reward_decay, decayed_advantage, logits_outs, acts_taken) + -self.ENTROPY_COEF * entropy_total
+        loss = -self.advantage_fn(trajecs_rewards, self.reward_decay, decayed_advantage, logits_outs, acts_taken) + -self.ENTROPY_COEF * entropy_total
         # print(loss)
 
         _, optim = self.policy_optim
@@ -81,31 +95,17 @@ class ExpoBaseLineAdvantage:
     def __init__(self, update_coef):
         self.COEF = update_coef
         self.avg = torch.tensor(0.0, dtype=torch.double)
-    def __call__(self, new_loss):
-        adv = new_loss - self.avg
+    def add_new_loss(self, new_loss):
         self.avg = (1.0 - self.COEF) * self.avg + self.COEF * new_loss
+    def __call__(self, trajecs_rewards, reward_decay, advantage_fn, logits_outs, acts_taken):
+        loss = trajecs_loss(trajecs_rewards, reward_decay, advantage_fn, logits_outs, acts_taken)
+        adv = loss - self.avg
+        self.add_new_loss(new_loss)
         return adv
 
 def entropy(logits):
     logits = logits.squeeze()
     return -torch.sum(nn_func.softmax(logits, dim=-1) * nn_func.log_softmax(logits, dim=-1), dim=-1)
-
-# calculate loss for policy gradient method
-# take in trajectories to compute over, advantage/reward fn of trajectory, policy probability outputs recorded, actions actually taken
-def trajecs_loss(trajecs_rewards, reward_decay, advantage_fn, logits_outs, acts_taken):
-    advantages_map = map(partial(trajec_advantage, reward_decay=reward_decay, advantage_fn=advantage_fn), trajecs_rewards)
-    advantages_tens = tuple(map(torch.tensor, advantages_map))
-
-    log_act_probs = map(get_log_act_prob, logits_outs)
-    log_act_sels = tuple(map(get_log_act_sel, zip(log_act_probs, acts_taken)))
-
-    losses = tuple(map(mul_both, zip(advantages_tens, log_act_sels)))
-    total = sum(map(len, losses))
-    accum_losses = tuple(map(torch.sum, losses))
-    total_loss = reduce(lambda x, y: x + y, accum_losses, torch.tensor(0.0, dtype=torch.double))
-    return total_loss / total
-
-    # note: may need to update as may accept tensor instead of list of trajectory features
 
 def mul_both(log_act):
     adv, acts = log_act
