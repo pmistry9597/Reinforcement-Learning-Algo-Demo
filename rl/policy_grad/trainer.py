@@ -16,7 +16,7 @@ def trajecs_loss(trajecs_rewards, reward_decay, advantage_fn, logits_outs, acts_
     decayed_advs = tuple(map(torch.tensor, advantages_map))
     mean_trajecs = torch.mean(torch.cat(decayed_advs, dim=0))
     mean_baseline_adv = tuple(map(lambda trajec: trajec - mean_trajecs, decayed_advs))
-    advantages_tens = decayed_advs # ignore mean baseline while we fix policy grad computation issue
+    advantages_tens = mean_baseline_adv #decayed_advs # ignore mean baseline while we fix policy grad computation issue
 
     # --- all above needs to be changed to generic fn system to take in entire batch ---
 
@@ -24,11 +24,13 @@ def trajecs_loss(trajecs_rewards, reward_decay, advantage_fn, logits_outs, acts_
     log_act_sels = tuple(map(get_log_act_sel, zip(log_act_probs, acts_taken)))
 
     losses = tuple(map(mul_both, zip(advantages_tens, log_act_sels)))
-    total = sum(map(len, losses))
+    # print(losses)
+    # total = sum(map(len, losses))
     accum_losses = tuple(map(torch.sum, losses))
-    total_loss = reduce(lambda x, y: x + y, accum_losses, torch.tensor(0.0, dtype=torch.double))
+    overall_loss = torch.mean(torch.stack(accum_losses))
+    # total_loss = reduce(lambda x, y: x + y, accum_losses, torch.tensor(0.0, dtype=torch.double))
     # print("loss:", total_loss / total)
-    return total_loss / total
+    return overall_loss
 
     # note: may need to update as may accept tensor instead of list of trajectory features
 
@@ -109,7 +111,7 @@ class PolicyGradTrainer(trainer.Trainer):
         # print(trajecs_rewards[0], logits_outs[0], acts_taken[0])
         entropy_total = torch.mean(torch.cat(tuple(map(lambda t: t.view([-1]), map(entropy, logits_outs))), dim=0))
         # print(entropy_total)
-        print("fak:", trajecs_rewards, logits_outs, acts_taken)
+        # print("fak:", trajecs_rewards, logits_outs, acts_taken)
         return -trajecs_loss(trajecs_rewards, self.reward_decay, self.advantage_fn, logits_outs, acts_taken) + -self.ENTROPY_COEF * entropy_total
 
     def update_policy(self):

@@ -18,15 +18,14 @@ class PolicyGradTrainerFnsTest(unittest.TestCase):
         # print(logits_outs[0].shape)
 
         acts_taken = [torch.tensor((0,1,2,0,2)), torch.tensor((1,1))]
-        # print("hollow")
         actual_loss_val = pol_train.trajecs_loss(trajec_rewards, reward_decay, advantage_fn, logits_outs, acts_taken)
-        # print("pee")
 
         decay_fct = reward_decay ** torch.arange(5)
         expected_loss_seq = []
         # self.assertGreater(0, len(trajec_rewards))
         for full_traj, act_traj, pol_traj in zip(trajec_rewards, acts_taken, logits_outs):
             # self.assertGreater(0, len(full_traj))
+            expected_loss_seq.append([])
             for i in range(len(full_traj)):
                 # traj = torch.stack(full_traj[-(i+1):])
                 # adv = torch.sum( traj * decay_fct[:i+1] )
@@ -36,40 +35,42 @@ class PolicyGradTrainerFnsTest(unittest.TestCase):
                 log_pol = log_softmax(pol_traj[-(i+1)], dim=0)[act]
                 # print(adv, act, log_pol)
                 loss_single = log_pol * adv
-                expected_loss_seq.append(loss_single)
+                expected_loss_seq[-1].append(loss_single)
         # print(expected_loss_seq)
-        expected_loss_val = torch.mean(torch.stack(expected_loss_seq))
+        exp_loss_means = tuple(map(lambda k: torch.sum(torch.stack(k)), expected_loss_seq))
+        expected_loss_val = torch.mean(torch.stack(exp_loss_means))
         self.assertTrue(torch.all(torch.isclose(actual_loss_val.detach(), expected_loss_val.detach(), atol=0.000001)))
         # note: may need to update test as function may accept tensor instead of list of trajectory features
 
 class PolicyGradTrainerTest(unittest.TestCase):
     def test_correct_loss_returned(self):
-        trajec_rewards = (343, 5, 69, 45, 2,)#, (3,4)])
+        trajec_rewards = [(343, 5, 69, 45, 2,), (3,4)]
         reward_decay = 0.9
         advantage_fn = lambda rew_traj, decay: torch.sum( decay ** torch.arange(len(rew_traj)) * rew_traj )
 
         # require grad to pass into update policy fn
-        logits_outs = [list(map(lambda ten: torch.tensor(ten, dtype=torch.double), ((3,5,4),(1,2,0),(10,4,2),(1,2,9),(10,4,34))))] #, tuple(map(lambda ten: torch.tensor(ten, dtype=torch.double), ((4,3),(6,4),)))]
+        logits_outs = [list(map(lambda ten: torch.tensor(ten, dtype=torch.double), ((3,5,4),(1,2,0),(10,4,2),(1,2,9),(10,4,34)))), tuple(map(lambda ten: torch.tensor(ten, dtype=torch.double), ((4,3),(6,4),)))]
         # print(logits_outs[0].shape)
 
-        acts_taken = torch.tensor((0,1,2,0,2))#, torch.tensor((1,1))]
+        acts_taken = (torch.tensor((0,1,2,0,2)), torch.tensor((1,1)))
         # print("hollow")
-        trajec_rewards_ex = tuple(map(lambda seq: tuple(map(torch.tensor, seq)), [trajec_rewards]))
+        trajec_rewards_ex = tuple(map(lambda seq: tuple(map(torch.tensor, seq)), trajec_rewards))
         logits_outs_ex = tuple(map(torch.stack, logits_outs))
-        expected_loss_val = -pol_train.trajecs_loss(trajec_rewards_ex, reward_decay, advantage_fn, logits_outs_ex, [acts_taken])
+        expected_loss_val = -pol_train.trajecs_loss(trajec_rewards_ex, reward_decay, advantage_fn, logits_outs_ex, acts_taken)
         trajec_rewards = tuple(map(torch.tensor, trajec_rewards)) # tensor conversion for trainer object
 
         policy = PolicyGradNNLunar(2, 3)
         optim = torch.optim.SGD(policy.parameters(), lr=0.01)
         trajecs_til_update = 2
-        trainer = pol_train.PolicyGradTrainer((policy, optim), reward_decay, trajecs_til_update, entropy_coef=1.0, discard_non_termined=False)
+        trainer = pol_train.PolicyGradTrainer((policy, optim), reward_decay, trajecs_til_update, entropy_coef=0.0, discard_non_termined=False)
         trainer.logits_outs = logits_outs
-        trainer.trajecs = [[]]
-        for rew, act in zip(trajec_rewards, acts_taken):
-            trainer.trajecs[0].append((-1,-1,-1,act,rew))
+        trainer.trajecs = [[], []]
+        for j in range(len(trajec_rewards)):
+            for rew, act in zip(trajec_rewards[j], acts_taken[j]):
+                trainer.trajecs[j].append((-1,-1,-1,act,rew))
         actual_loss = trainer.compute_loss()
 
-        print("fucking penis:", expected_loss_val.detach(), actual_loss.detach())
+        # print("fucking penis:", expected_loss_val.detach(), actual_loss.detach())
         self.assertTrue(torch.all(torch.isclose(expected_loss_val.detach(), actual_loss.detach(), atol=0.000001)))
 
     def test_update_policy(self):
