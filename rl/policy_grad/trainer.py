@@ -7,12 +7,18 @@ import torch.nn.functional as nn_func
 # calculate loss for policy gradient method
 # take in trajectories to compute over, advantage/reward fn of trajectory, policy probability outputs recorded, actions actually taken
 def trajecs_loss(trajecs_rewards, reward_decay, advantage_fn, logits_outs, acts_taken):
-    mean_trajec = trajecs_mean(trajecs_rewards)
-    advantage_fn = partial(mean_adv, mean_trajec=mean_trajec)
+    # mean_trajec = trajecs_mean(trajecs_rewards)
+    # advantage_fn = partial(mean_adv, mean_trajec=mean_trajec)
+    # -- above is section of pain --
     # print("mean:", mean_trajec)
 
-    advantages_map = map(partial(trajec_advantage, reward_decay=reward_decay, advantage_fn=advantage_fn), trajecs_rewards)
-    advantages_tens = tuple(map(torch.tensor, advantages_map))
+    advantages_map = map(partial(trajec_advantage, reward_decay=reward_decay, advantage_fn=decayed_advantage), trajecs_rewards)
+    decayed_advs = tuple(map(torch.tensor, advantages_map))
+    mean_trajecs = torch.mean(torch.cat(decayed_advs, dim=0))
+    mean_baseline_adv = tuple(map(lambda trajec: trajec - mean_trajecs, decayed_advs))
+    advantages_tens = decayed_advs # ignore mean baseline while we fix policy grad computation issue
+
+    # --- all above needs to be changed to generic fn system to take in entire batch ---
 
     log_act_probs = map(get_log_act_prob, logits_outs)
     log_act_sels = tuple(map(get_log_act_sel, zip(log_act_probs, acts_taken)))
@@ -30,6 +36,10 @@ def decayed_advantage(rew_traj, decay):
     # rew_traj += rew_traj + torch.ones_like(rew_traj) * -0.001
     return torch.sum( decay ** torch.arange(len(rew_traj)) * rew_traj )
 
+def trajec_advantage(trajec_rewards, reward_decay, advantage_fn):
+    trajec_rewards = torch.stack(trajec_rewards)
+    return tuple(map(lambda i: advantage_fn(trajec_rewards[i:], reward_decay), range(len(trajec_rewards))))
+
 def trajecs_mean(trajecs_rewards):
     trajecs_tens = map(torch.stack, trajecs_rewards)
     trajecs_single = torch.cat(tuple(trajecs_tens), dim=0)
@@ -45,7 +55,9 @@ class PolicyGradTrainer(trainer.Trainer):
         logits_out = policy(obs)
         self.logits_outs[-1].append(logits_out)
         # print(pol_out)
-        return sample_act(logits_out)
+        action = sample_act(logits_out)
+        # print('action', action)
+        return action
 
     def new_step(self, sampl):
         # print(sampl)
@@ -88,7 +100,7 @@ class PolicyGradTrainer(trainer.Trainer):
         self.logits_outs.append([])
         self.trajecs.append([])
 
-    def update_policy(self):
+    def compute_loss(self):
         smpl_rew_i = 4
         trajecs_rewards = tuple(map(lambda trajec: tuple(map(lambda smpl: smpl[smpl_rew_i], trajec)), self.trajecs))
         smpl_act_i = 3
@@ -97,7 +109,11 @@ class PolicyGradTrainer(trainer.Trainer):
         # print(trajecs_rewards[0], logits_outs[0], acts_taken[0])
         entropy_total = torch.mean(torch.cat(tuple(map(lambda t: t.view([-1]), map(entropy, logits_outs))), dim=0))
         # print(entropy_total)
-        loss = -trajecs_loss(trajecs_rewards, self.reward_decay, self.advantage_fn, logits_outs, acts_taken) + -self.ENTROPY_COEF * entropy_total
+        print("fak:", trajecs_rewards, logits_outs, acts_taken)
+        return -trajecs_loss(trajecs_rewards, self.reward_decay, self.advantage_fn, logits_outs, acts_taken) + -self.ENTROPY_COEF * entropy_total
+
+    def update_policy(self):
+        loss = self.compute_loss()
         # print(loss)
 
         _, optim = self.policy_optim
@@ -124,7 +140,3 @@ def get_log_act_sel(log_act_w_acts_taken):
 
 def get_log_act_prob(logits_out):
     return nn_func.log_softmax(logits_out.squeeze(1), dim=1)
-
-def trajec_advantage(trajec_rewards, reward_decay, advantage_fn):
-    trajec_rewards = torch.stack(trajec_rewards)
-    return tuple(map(lambda i: advantage_fn(trajec_rewards[i:], reward_decay), range(len(trajec_rewards))))

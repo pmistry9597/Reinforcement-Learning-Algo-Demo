@@ -4,6 +4,7 @@ import torch.nn.functional as nn_func
 from .. import actor
 
 def sample_act_single(act_logits):
+    # print("prob",nn_func.softmax(act_logits, dim=0))
     return distrbs.Categorical(nn_func.softmax(act_logits, dim=0)).sample()
 
 def sample_act(act_logits): # batched version
