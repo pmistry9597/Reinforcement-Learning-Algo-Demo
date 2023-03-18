@@ -21,7 +21,7 @@ def get_q_hyperlist():
 
 def get_policy_grad_hyperlist():
     hypers = [
-        policy_train.encode_hypers(episodes=30000, max_steps=1600, lr=0.003, reward_decay=0.999, entropy_bonus=0.0, trajecs_til_update=32, discard_non_termined=False, advantage_fn=mean_adv)
+        policy_train.encode_hypers(episodes=30000, max_steps=1600, lr=0.002, reward_decay=0.999, entropy_bonus=0.0, trajecs_til_update=16, discard_non_termined=False, advantage_fn=mean_adv)
     ]
 
     return hypers

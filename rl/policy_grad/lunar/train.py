@@ -32,8 +32,8 @@ def train_once(t_no, curr_time, hyperparams):
     trainer = PolicyGradTrainer((policy, optim), reward_decay, trajecs_til_update, entropy_coef=entropy_bonus, discard_non_termined=discard_non_termined, advantage_fn=advantage_fn)
     actor = basic.PolicyGradActor(policy)
 
-    measure_eps = set(filter(lambda epis: epis % 20 == 20 - 1, range(episodes)))
-    save_eps = set(filter(lambda epis: epis % 40 == 40 - 1, range(episodes)))
+    measure_eps = set(filter(lambda epis: epis % 100 == 100 - 1, range(episodes)))
+    save_eps = set(filter(lambda epis: epis % 100 == 100 - 1, range(episodes)))
     should_save_cond = lambda e: e in save_eps
 
     complete_train(
