@@ -2,7 +2,7 @@ import rl.deep_q.lunar.train as q_train
 import rl.policy_grad.lunar.train as policy_train
 from rl.policy_grad.trainer import mean_adv
 from rl.train_generic import train_for_hypers
-
+from rl.policy_grad import advantage_fns
 import numpy as np
 import math
 from functools import partial
@@ -21,7 +21,7 @@ def get_q_hyperlist():
 
 def get_policy_grad_hyperlist():
     hypers = [
-        policy_train.encode_hypers(episodes=30000, max_steps=1600, lr=0.002, reward_decay=0.999, entropy_bonus=0.0, trajecs_til_update=16, discard_non_termined=False, advantage_fn=mean_adv)
+        policy_train.encode_hypers(episodes=30000, max_steps=10000, lr=0.002, reward_decay=0.999, entropy_bonus=0.0, trajecs_til_update=16, discard_non_termined=False, advantage_fn=advantage_fns.reward_to_go)
     ]
 
     return hypers
