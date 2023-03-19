@@ -1,6 +1,5 @@
 import rl.deep_q.lunar.train as q_train
 import rl.policy_grad.lunar.train as policy_train
-from rl.policy_grad.trainer import mean_adv
 from rl.train_generic import train_for_hypers
 from rl.policy_grad import advantage_fns
 import numpy as np

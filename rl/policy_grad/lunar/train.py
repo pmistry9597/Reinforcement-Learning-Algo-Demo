@@ -4,7 +4,7 @@ import torch
 
 from rl.policy_grad.lunar.model import PolicyGradNNLunar
 from rl.policy_grad import basic
-from rl.policy_grad.trainer import PolicyGradTrainer, decayed_advantage
+from rl.policy_grad.trainer import PolicyGradTrainer
 from rl.train_generic import complete_train, default_ep_r
 
 def train_once(t_no, curr_time, hyperparams):
@@ -45,7 +45,7 @@ def train_once(t_no, curr_time, hyperparams):
 
 def encode_hypers(episodes, max_steps, 
     lr, reward_decay, 
-    trajecs_til_update, cut_off_mean=None, entropy_bonus=0.0, discard_non_termined=False, advantage_fn=decayed_advantage):
+    trajecs_til_update, cut_off_mean=None, entropy_bonus=0.0, discard_non_termined=False, advantage_fn=None):
 
     return (episodes, max_steps, 
         lr, reward_decay, 
