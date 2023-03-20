@@ -15,4 +15,6 @@ The learn rate also had to be increased compared with DQN.
 
 ## Beyond Policy Gradients
 
-The policy gradient computation here will be applied to Proximal Policy Optimization (PPO) later on, where the baseline is replaced with an advantage estimation. Many algorithms in RL today make use of this advantage estimation scheme, where a different model computes something that directly or indirectly allows an advantage to be computed. The advantage scheme is usually similar to how DQN computes the value of an action, and in this case these algorithms are known as actor-critic methods.
+The policy gradient concept here will be applied to Proximal Policy Optimization (PPO) later on, where the baseline is replaced with an advantage estimation. Many algorithms in RL today make use of this advantage estimation scheme, where a different model computes something that directly or indirectly allows an advantage to be computed. The advantage scheme is usually similar to how DQN computes the value of an action, and in this case these algorithms are known as actor-critic methods.
+
+PPO is also different in that it compares the current policy iteration to the previous one to prevent big changes in behavior. This stability means that the policy can be improved on iteratively versus requesting big changes in 

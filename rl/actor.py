@@ -1,3 +1,5 @@
+import torch
+
 class Actor:
     def __call__(self, obs):
         pass
@@ -19,4 +21,4 @@ class RandomActor(Actor):
     def __init__(self, action_space):
         self.action_space = action_space
     def __call__(self, obs):
-        return self.action_space.sample()
+        return torch.tensor(self.action_space.sample())

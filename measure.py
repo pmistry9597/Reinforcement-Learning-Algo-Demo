@@ -26,7 +26,7 @@ def measure_ep(agent, env, obs_norm, max_steps=math.inf, record_frames=False):
     while not termin and steps < max_steps:
         prev_obs = obs
         act = agent(torch.tensor(np.expand_dims(obs, axis=0), dtype=torch.double))
-        obs, reward, termin, trunc, info  = env.step(act.item())
+        obs, reward, termin, trunc, info  = env.step(act.squeeze().numpy())
         obs = normalize(obs, obs_mean, obs_scale)
         rewards.append(reward)
         if record_frames:
