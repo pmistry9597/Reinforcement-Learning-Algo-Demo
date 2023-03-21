@@ -40,6 +40,6 @@ def handle_hyper_in(hypers, train_once):
     train_for_hypers(hypers, train_once)
 
 if __name__ == '__main__':
-    handle_hyper_in(get_policy_grad_cartpole_hyperlist(), policy_grad_cartpole.train_once)
-    # handle_hyper_in(get_policy_grad_lunar_hyperlist(), policy_train_lunar.train_once)
+    # handle_hyper_in(get_policy_grad_cartpole_hyperlist(), policy_grad_cartpole.train_once)
+    handle_hyper_in(get_policy_grad_lunar_hyperlist(), policy_train_lunar.train_once)
     # handle_hyper_in(get_q_hyperlist(), q_train.train_once)

@@ -72,15 +72,17 @@ class PolicyGradTrainer(trainer.Trainer):
         smpl_act_i = 3
         acts_taken = tuple(map(lambda trajec: torch.tensor(tuple(map(lambda smpl: smpl[smpl_act_i], trajec))), self.trajecs))
         logits_outs = tuple(map(torch.stack, self.logits_outs))
-        # print(trajecs_rewards[0], logits_outs[0], acts_taken[0])
+        logits_outs = tuple(map(lambda t: t.squeeze(1), logits_outs))
         entropy_total = torch.mean(torch.cat(tuple(map(lambda t: t.view([-1]), map(entropy, logits_outs))), dim=0))
-        # print(entropy_total)
-        # print("fak:", trajecs_rewards, logits_outs, acts_taken)
+        # print(trajecs_rewards[:2])
+        # print(tuple(map(lambda t: t.shape, acts_taken[:2])))
+        # print(tuple(map(lambda t: t.shape, logits_outs[:2])))
+        # print(acts_taken[:2])
+        # print(logits_outs[:2])
         return -trajecs_loss(trajecs_rewards, self.reward_decay, self.advantage_fn, logits_outs, acts_taken) + -self.ENTROPY_COEF * entropy_total
 
     def update_policy(self):
         loss = self.compute_loss()
-        # print(loss)
 
         _, optim = self.policy_optim
         optim.zero_grad()

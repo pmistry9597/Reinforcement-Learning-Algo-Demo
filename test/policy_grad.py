@@ -16,7 +16,6 @@ class PolicyGradTrainerFnsTest(unittest.TestCase):
 
         logits_outs = [tuple(map(lambda ten: torch.tensor(ten, dtype=torch.double), ((3,5,4),(1,2,0),(10,4,2),(1,2,9),(10,4,34)))), tuple(map(lambda ten: torch.tensor(ten, dtype=torch.double), ((4,3),(6,4),))), tuple(map(lambda ten: torch.tensor(ten, dtype=torch.double), ((4,3),(6,4),(6,4),)))]
         logits_outs = tuple(map(torch.stack, logits_outs))
-        # print(logits_outs[0].shape)
 
         acts_taken = [torch.tensor((0,1,2,0,2)), torch.tensor((1,1)), torch.tensor((1,1,0))]
         actual_loss_val = pol_train.trajecs_loss(trajec_rewards, reward_decay, advantage_fn, logits_outs, acts_taken)
@@ -25,16 +24,13 @@ class PolicyGradTrainerFnsTest(unittest.TestCase):
         expected_loss_seq = []
         # self.assertGreater(0, len(trajec_rewards))
         for full_traj, act_traj, pol_traj in zip(trajec_rewards, acts_taken, logits_outs):
-            # self.assertGreater(0, len(full_traj))
             expected_loss_seq.append([])
             for i in range(len(full_traj)):
-                adv = reduce(lambda bef, e_r: bef + (e_r[1] * reward_decay ** e_r[0]), enumerate(full_traj[-(i+1):]), torch.tensor(0.0, dtype=torch.double))
-                act = act_traj[-(i+1)]
-                log_pol = log_softmax(pol_traj[-(i+1)], dim=0)[act]
-                # print(adv, act, log_pol)
+                adv = reduce(lambda bef, e_r: bef + (e_r[1] * reward_decay ** e_r[0]), enumerate(full_traj[i:]), torch.tensor(0.0, dtype=torch.double))
+                act = act_traj[i]
+                log_pol = log_softmax(pol_traj[i], dim=0)[act]
                 loss_single = log_pol * adv
                 expected_loss_seq[-1].append(loss_single)
-        # print(expected_loss_seq)
         exp_loss_means = tuple(map(lambda k: torch.sum(torch.stack(k)), expected_loss_seq))
         expected_loss_val = torch.mean(torch.stack(exp_loss_means))
         self.assertTrue(torch.all(torch.isclose(actual_loss_val.detach(), expected_loss_val.detach(), atol=0.000001)))
@@ -47,14 +43,22 @@ class PolicyGradTrainerTest(unittest.TestCase):
 
         # require grad to pass into update policy fn
         logits_outs = [list(map(lambda ten: torch.tensor(ten, dtype=torch.double), ((3,5,4),(1,2,0),(10,4,2),(1,2,9),(10,4,34)))), tuple(map(lambda ten: torch.tensor(ten, dtype=torch.double), ((4,3),(6,4),)))]
-        # print(logits_outs[0].shape)
 
         acts_taken = (torch.tensor((0,1,2,0,2)), torch.tensor((1,1)))
-        # print("hollow")
-        trajec_rewards_ex = tuple(map(lambda seq: tuple(map(torch.tensor, seq)), trajec_rewards))
-        logits_outs_ex = tuple(map(torch.stack, logits_outs))
-        expected_loss_val = -pol_train.trajecs_loss(trajec_rewards_ex, reward_decay, advantage_fn, logits_outs_ex, acts_taken)
         trajec_rewards = tuple(map(torch.tensor, trajec_rewards)) # tensor conversion for trainer object
+
+        decay_fct = reward_decay ** torch.arange(5)
+        expected_loss_seq = []
+        for full_traj, act_traj, pol_traj in zip(trajec_rewards, acts_taken, logits_outs):
+            expected_loss_seq.append([])
+            for i in range(len(full_traj)):
+                adv = reduce(lambda bef, e_r: bef + (e_r[1] * reward_decay ** e_r[0]), enumerate(full_traj[i:]), torch.tensor(0.0, dtype=torch.double))
+                act = act_traj[i]
+                log_pol = log_softmax(pol_traj[i], dim=0)[act]
+                loss_single = log_pol * adv
+                expected_loss_seq[-1].append(loss_single)
+        exp_loss_means = tuple(map(lambda k: torch.sum(torch.stack(k)), expected_loss_seq))
+        expected_loss_val = -torch.mean(torch.stack(exp_loss_means))
 
         policy = PolicyGradNNLunar(2, 3)
         optim = torch.optim.SGD(policy.parameters(), lr=0.01)
