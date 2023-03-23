@@ -27,7 +27,7 @@ def train_once(t_no, curr_time, hyperparams):
     obs_mean = (env.observation_space.high + env.observation_space.low) / 2
     obs_scale = 1.0 / (env.observation_space.high - obs_mean)
     obs_norm = (obs_mean, obs_scale)
-    rew_norm = (0.0, 1.0/100.0)
+    rew_norm = (0.0, 1.0)
 
     trainer = PolicyGradTrainer((policy, optim), reward_decay, trajecs_til_update, entropy_coef=entropy_bonus, discard_non_termined=discard_non_termined, advantage_fn=advantage_fn)
     actor = basic.PolicyGradActor(policy)

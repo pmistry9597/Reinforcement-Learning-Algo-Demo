@@ -21,7 +21,7 @@ def get_q_hyperlist():
 
 def get_policy_grad_lunar_hyperlist():
     hypers = [
-        policy_train_lunar.encode_hypers(episodes=30000, max_steps=10000, lr=0.002, reward_decay=0.999, entropy_bonus=0.0, trajecs_til_update=16, discard_non_termined=False, advantage_fn=advantage_fns.reward_to_go)
+        policy_train_lunar.encode_hypers(episodes=100000, max_steps=10000, lr=0.002, reward_decay=1.0, entropy_bonus=0.0, trajecs_til_update=16, discard_non_termined=False, advantage_fn=advantage_fns.reward_to_go_normalized)
     ]
 
     return hypers

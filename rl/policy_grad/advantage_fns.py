@@ -6,6 +6,15 @@ def reward_to_go(trajecs_rewards, decay):
     decayed_advs = tuple(map(torch.tensor, advantages_map))
     return decayed_advs
 
+def reward_to_go_normalized(trajecs_rewards, decay):
+    advs = reward_to_go(trajecs_rewards, decay)
+    aggreg = torch.cat(advs, dim=0)
+    mean = torch.mean(aggreg)
+    std = torch.std(aggreg)
+    advs = map(lambda traj: traj - mean, advs)
+    advs = map(lambda traj: traj - std, advs)
+    return tuple(advs)
+
 def reward_to_go_mean_baseline(trajecs_rewards, decay):
     rew_to_go = reward_to_go(trajecs_rewards, decay)
     mean_trajecs = torch.mean(torch.cat(decayed_advs, dim=0))

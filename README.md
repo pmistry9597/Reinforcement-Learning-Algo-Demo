@@ -17,7 +17,7 @@ The most common theoretical framework for RL problems is the Markov Decision Pro
 I intend on demoing the following algorithms in simulations that are pre-built in Gymnasium. The example shown above is the LunarLander-v2 environment, which is one of the simpler ones. The algorithms are written from scratch, with PyTorch being the basis for the neural networks.
 
 - [x] Deep Q-Networks (DQN)
-- [ ] Policy Gradients - with basic baseline
+- [ ] Policy Gradients
 - [ ] Proximal Policy Optimization (PPO)
 - [ ] Soft Actor Critic (SAC)
 

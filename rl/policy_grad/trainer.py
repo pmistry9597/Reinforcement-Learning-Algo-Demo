@@ -5,19 +5,6 @@ from rl.policy_grad import advantage_fns
 import torch
 import torch.nn.functional as nn_func
 
-# calculate loss for policy gradient method
-# take in trajectories to compute over, advantage/reward fn of trajectory, policy probability outputs recorded, actions actually taken
-def trajecs_loss(trajecs_rewards, reward_decay, advantage_fn, logits_outs, acts_taken):
-    advantages_tens = advantage_fn(trajecs_rewards, reward_decay)
-
-    log_act_probs = map(get_log_act_prob, logits_outs)
-    log_act_sels = tuple(map(get_log_act_sel, zip(log_act_probs, acts_taken)))
-
-    losses = tuple(map(mul_both, zip(advantages_tens, log_act_sels)))
-    accum_losses = tuple(map(torch.sum, losses))
-    overall_loss = torch.mean(torch.stack(accum_losses))
-    return overall_loss
-
 class PolicyGradTrainer(trainer.Trainer):
     def act(self, obs, trajec_no):
         policy, _ = self.policy_optim
@@ -73,13 +60,13 @@ class PolicyGradTrainer(trainer.Trainer):
         acts_taken = tuple(map(lambda trajec: torch.tensor(tuple(map(lambda smpl: smpl[smpl_act_i], trajec))), self.trajecs))
         logits_outs = tuple(map(torch.stack, self.logits_outs))
         logits_outs = tuple(map(lambda t: t.squeeze(1), logits_outs))
-        entropy_total = torch.mean(torch.cat(tuple(map(lambda t: t.view([-1]), map(entropy, logits_outs))), dim=0))
+        # entropy_total = torch.mean(torch.cat(tuple(map(lambda t: t.view([-1]), map(entropy, logits_outs))), dim=0))
         # print(trajecs_rewards[:2])
         # print(tuple(map(lambda t: t.shape, acts_taken[:2])))
         # print(tuple(map(lambda t: t.shape, logits_outs[:2])))
         # print(acts_taken[:2])
         # print(logits_outs[:2])
-        return -trajecs_loss(trajecs_rewards, self.reward_decay, self.advantage_fn, logits_outs, acts_taken) + -self.ENTROPY_COEF * entropy_total
+        return -trajecs_loss(trajecs_rewards, self.reward_decay, self.advantage_fn, logits_outs, acts_taken) # + -self.ENTROPY_COEF * entropy_total
 
     def update_policy(self):
         loss = self.compute_loss()
@@ -91,9 +78,18 @@ class PolicyGradTrainer(trainer.Trainer):
 
         return loss
 
-def entropy(logits):
-    logits = logits.squeeze()
-    return -torch.sum(nn_func.softmax(logits, dim=-1) * nn_func.log_softmax(logits, dim=-1), dim=-1)
+# calculate loss for policy gradient method
+# take in trajectories to compute over, advantage/reward fn of trajectory, policy probability outputs recorded, actions actually taken
+def trajecs_loss(trajecs_rewards, reward_decay, advantage_fn, logits_outs, acts_taken):
+    advantages_tens = advantage_fn(trajecs_rewards, reward_decay)
+
+    log_act_probs = map(get_log_act_prob, logits_outs)
+    log_act_sels = tuple(map(get_log_act_sel, zip(log_act_probs, acts_taken)))
+
+    losses = tuple(map(mul_both, zip(advantages_tens, log_act_sels)))
+    accum_losses = tuple(map(torch.sum, losses))
+    overall_loss = torch.mean(torch.stack(accum_losses))
+    return overall_loss
 
 def mul_both(log_act):
     adv, acts = log_act
@@ -106,3 +102,8 @@ def get_log_act_sel(log_act_w_acts_taken):
 
 def get_log_act_prob(logits_out):
     return nn_func.log_softmax(logits_out.squeeze(1), dim=1)
+
+
+def entropy(logits):
+    logits = logits.squeeze()
+    return -torch.sum(nn_func.softmax(logits, dim=-1) * nn_func.log_softmax(logits, dim=-1), dim=-1)
